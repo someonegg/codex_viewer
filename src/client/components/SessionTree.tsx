@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { SessionSummary } from "../../shared/domain";
+import { sessionDisplayTitle } from "../session-title";
 
 export interface SessionGroup {
   root: SessionSummary;
@@ -165,8 +166,9 @@ interface SessionLinkProps {
 
 function SessionLink({ session, child = false }: SessionLinkProps) {
   const taskName = child ? session.agent?.taskName ?? null : null;
-  const displayTitle = taskName ?? session.title;
-  const showOriginalTitle = taskName !== null && taskName !== session.title;
+  const sessionTitle = sessionDisplayTitle(session);
+  const displayTitle = taskName ?? sessionTitle;
+  const showOriginalTitle = taskName !== null && taskName !== sessionTitle;
   const agentLabels = child
     ? [...new Set(
         [session.agent?.role, session.agent?.nickname]
@@ -186,7 +188,7 @@ function SessionLink({ session, child = false }: SessionLinkProps) {
         ? <span className="archive-label">Archived</span>
         : null}
       <span className="source-label">{session.origin.agentName}</span>
-      {showOriginalTitle ? <small className="session-subtitle">{session.title}</small> : null}
+      {showOriginalTitle ? <small className="session-subtitle">{sessionTitle}</small> : null}
       {child && agentLabels.length === 0
         ? null
         : (

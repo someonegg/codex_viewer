@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import type {
   DomainDiagnostic,
+  DomainSession,
   DomainSessionOrigin,
   NormalizedSession,
 } from "../../domain/session-domain.js";
@@ -29,6 +30,7 @@ import {
   type SessionNormalizer,
   type SessionNormalizerState,
 } from "./session-normalizer.js";
+import { SessionIndexReader } from "./session-index-reader.js";
 
 const EXPECTED_ROLLOUT_IO_ERRORS = new Set([
   "ENOENT",
@@ -94,6 +96,7 @@ export class CodexSessionSource implements SessionSource {
     private readonly decoder: RolloutDecoder = new CheckpointedRolloutDecoder(),
     private readonly identity = new IdentityResolver(),
     private readonly normalizer: SessionNormalizer = new DefaultSessionNormalizer(),
+    private readonly sessionIndex = new SessionIndexReader(codexHome),
   ) {
     this.descriptor = {
       sourceType: "codex-jsonl",
@@ -104,6 +107,7 @@ export class CodexSessionSource implements SessionSource {
   }
 
   async refresh(): Promise<SessionSourceSnapshot> {
+    await this.sessionIndex.refresh();
     const policy = await PathPolicy.create(this.codexHome);
     const discovery = await new JsonlCatalogSource(policy).discover();
     const discoverySignature = JSON.stringify({
@@ -160,6 +164,14 @@ export class CodexSessionSource implements SessionSource {
 
   lastRefreshTelemetry(): CodexRefreshTelemetry {
     return { ...this.#lastRefreshTelemetry };
+  }
+
+  nicknameFor(session: DomainSession): string | null {
+    if (
+      session.origin.sourceInstanceId !== this.descriptor.sourceInstanceId ||
+      session.sourceId === null
+    ) return null;
+    return this.sessionIndex.threadName(session.sourceId);
   }
 
   async #load(

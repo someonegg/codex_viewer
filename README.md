@@ -98,8 +98,9 @@ session, run the activation command shown at the bottom of that session's
 timeline from inside its Codex pane. The interaction panel is shown only while
 Live updates are enabled.
 
-The viewer reads only `rollout-*.jsonl` files and does not inspect Codex
-databases. It applies size limits when reading and serving session data. See
+The viewer reads `rollout-*.jsonl` files and the advisory `session_index.jsonl`;
+it does not inspect Codex databases. It applies size limits when reading and
+serving session data. See
 [Session JSONL filtering rules](docs/session-jsonl-filtering.md) for supported
 records, truncation, and visibility rules.
 
@@ -136,6 +137,9 @@ Accepted architecture decisions are recorded under [`docs/adr`](docs/adr):
 - [ADR-0010: Opaque session-list cursors](docs/adr/0010-use-opaque-session-list-cursors.md)
 - [ADR-0011: Repository-probed bounded long polling](docs/adr/0011-use-repository-probed-bounded-long-polling.md)
 - [ADR-0012: Checkpointed incremental rollout loading with probe validation](docs/adr/0012-use-checkpointed-incremental-rollout-loading.md)
+- [ADR-0013: Browser-side session archive filtering](docs/adr/0013-filter-session-archive-state-in-the-browser.md)
+- [ADR-0014: Tab-scoped Live update preference](docs/adr/0014-remember-live-updates-per-browser-tab.md)
+- [ADR-0015: Session index names as presentation metadata](docs/adr/0015-expose-session-index-names-as-presentation-metadata.md)
 
 ## Development
 

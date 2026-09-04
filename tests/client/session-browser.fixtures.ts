@@ -16,7 +16,7 @@ export const NEXT_TIMELINE_CURSOR = "opaque.timeline.next" as TimelineCursor;
 export const LIVE_REVISION = "opaque.live.revision" as LiveRevision;
 
 export const baseSession: SessionSummary = {
-  id: SESSION_ID, title: "Reader work", cwd: "/project/reader",
+  id: SESSION_ID, title: "Reader work", nickname: null, cwd: "/project/reader",
   origin: {
     sourceType: "codex-jsonl",
     sourceInstanceId: "source-instance",

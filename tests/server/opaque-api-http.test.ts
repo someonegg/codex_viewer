@@ -147,27 +147,39 @@ describe("opaque cursor API", () => {
   });
 
   it("opens through items, keeps an empty incremental cursor stable, and bounds lazy detail", async () => {
-    const { base } = await startApi();
-    const list = await fetch(`${base}/api/v1/sessions`)
+    const { base, home } = await startApi();
+    await writeFile(
+      join(home, "session_index.jsonl"),
+      `${JSON.stringify({ id: "basic-session", thread_name: "Current nickname" })}\n`,
+    );
+    const list = await fetch(`${base}/api/v1/sessions?fresh=true`)
       .then((response) => response.json());
     const sessionId = list.sessions.find(
       (session: { title: string }) => session.title === "Synthetic trace",
     ).id;
+    expect(list.sessions.find((session: { id: string }) => session.id === sessionId))
+      .toMatchObject({ title: "Synthetic trace", nickname: "Current nickname" });
 
     const metadata = await fetch(`${base}/api/v1/sessions/${sessionId}`)
       .then((response) => response.json());
     expect(metadata.session.title).toBe("Synthetic trace");
+    expect(metadata.session.nickname).toBe("Current nickname");
+    expect(metadata).not.toHaveProperty("revisionSession");
 
     const first = await fetch(`${base}/api/v1/sessions/${sessionId}/items?limit=1`)
       .then((response) => response.json());
     expect(first).toEqual(expect.objectContaining({
-      session: expect.objectContaining({ title: "Synthetic trace" }),
+      session: expect.objectContaining({
+        title: "Synthetic trace",
+        nickname: "Current nickname",
+      }),
       interaction: { supported: false },
       items: expect.any(Array),
       cursor: expect.any(String),
       hasMore: true,
       liveRevision: expect.any(String),
     }));
+    expect(first).not.toHaveProperty("revisionSession");
     const unconfirmed = await fetch(
       `${base}/api/v1/sessions/${sessionId}/items/directive-4/directive?cursor=${encodeURIComponent(first.cursor)}`,
     );

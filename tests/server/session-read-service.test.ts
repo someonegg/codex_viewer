@@ -81,6 +81,56 @@ describe("SessionReadService", () => {
     expect(discoveries).toBe(3);
   });
 
+  it("uses session-index nicknames without invalidating list or timeline cursors", async () => {
+    const { home, repository } = await fixtureRepository();
+    const baseline = await repository.list({ limit: 1 });
+    const expectedSecondId = (await repository.list({})).sessions[1]!.id;
+    const basic = (await repository.list({})).sessions.find(
+      ({ title }) => title === "Synthetic trace",
+    )!;
+    const firstItems = await repository.getItems(basic.id, { limit: 1 });
+
+    await writeFile(join(home, "session_index.jsonl"), [
+      JSON.stringify({ id: "basic-session", thread_name: "Old nickname" }),
+      JSON.stringify({ id: "basic-session", thread_name: "Current nickname" }),
+      JSON.stringify({ id: "basic-session", thread_name: "  " }),
+      "{incomplete",
+    ].join("\n"));
+    await repository.refresh();
+
+    const continuation = await repository.list({
+      limit: 1,
+      cursor: baseline.nextCursor!,
+    });
+    expect(continuation.sessions[0]!.id).toBe(expectedSecondId);
+    const renamed = (await repository.list({})).sessions.find(
+      ({ id }) => id === basic.id,
+    );
+    expect(renamed).toMatchObject({
+      title: "Synthetic trace",
+      nickname: "Current nickname",
+    });
+
+    const detail = await repository.getSession(basic.id);
+    expect(detail?.session).toMatchObject({
+      title: "Synthetic trace",
+      nickname: "Current nickname",
+    });
+    const continuedItems = await repository.getItems(basic.id, {
+      cursor: firstItems!.cursor,
+      limit: 1,
+    });
+    expect(continuedItems?.session).toMatchObject({
+      title: "Synthetic trace",
+      nickname: "Current nickname",
+    });
+    const live = await repository.getLiveSession(basic.id, firstItems!.cursor);
+    expect(live?.session).toMatchObject({
+      title: "Synthetic trace",
+      nickname: "Current nickname",
+    });
+  });
+
   it("keeps catalog contents stable when only source diagnostics change", async () => {
     let signature = "warning";
     let diagnostics = [{

@@ -155,6 +155,7 @@ const SESSION: SessionDetail = {
     formatVersion: null,
   },
   title: "Session",
+  nickname: null,
   cwd: null,
   createdAt: null,
   updatedAt: null,

@@ -7,9 +7,35 @@ import { createApiRouter } from "../../src/server/http/api-router.js";
 import { createServer } from "../../src/server/http/create-server.js";
 import type { SessionReader } from "../../src/server/application/session-reader.js";
 import { SessionLiveService } from "../../src/server/live/session-live-service.js";
+import type { SessionDetail } from "../../src/shared/domain.js";
 import { createTempDirectory } from "../helpers/temp-directories.js";
 
 const SESSION_ID = "abcdefghijklmnopqrstuvwxyzABCDEFGH123456789";
+const SESSION: SessionDetail = {
+  id: SESSION_ID,
+  origin: {
+    sourceType: "test",
+    sourceInstanceId: "test",
+    agentName: "Test",
+    agentVersion: null,
+    formatVersion: null,
+  },
+  title: "Session",
+  nickname: null,
+  cwd: null,
+  createdAt: null,
+  updatedAt: null,
+  archived: false,
+  parentId: null,
+  childIds: [],
+  agent: null,
+  messageCount: 0,
+  toolCount: 0,
+  warningCount: 0,
+  sourceId: "session",
+  diagnostics: [],
+  itemCount: 0,
+};
 const servers: ReturnType<typeof createServer>[] = [];
 
 afterEach(async () => {
@@ -23,7 +49,7 @@ async function start() {
   const unavailable = async () => null;
   const repository: SessionReader = {
     list: vi.fn(),
-    getSession: vi.fn().mockResolvedValue({ context: { source: "detail" } }),
+    getSession: vi.fn().mockResolvedValue({ session: SESSION }),
     getItems: unavailable,
     getLiveSession: unavailable,
     getToolDetail: unavailable,

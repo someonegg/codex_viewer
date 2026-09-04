@@ -25,7 +25,13 @@ import type {
   ToolDetailResult,
 } from "../repository/session-queries.js";
 
+export type SessionNicknameResolver = (session: DomainSession) => string | null;
+
 export class SessionApiMapper {
+  constructor(
+    private readonly resolveNickname: SessionNicknameResolver = () => null,
+  ) {}
+
   list(
     result: SessionListResult,
     diagnostics: readonly DomainDiagnostic[],
@@ -80,6 +86,7 @@ export class SessionApiMapper {
       id: session.id,
       origin: { ...session.origin },
       title: session.title,
+      nickname: this.resolveNickname(session),
       cwd: session.cwd,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,

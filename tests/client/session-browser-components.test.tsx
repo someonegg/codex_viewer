@@ -159,6 +159,31 @@ describe("session browser components", () => {
     expect(screen.getByText(/native-session/)).toBeInTheDocument();
   });
 
+  it("prefers a session nickname without exposing the canonical title", () => {
+    const nicknamed = { ...baseSession, nickname: "Display nickname" };
+    const catalog = render(<SessionTree entries={[nicknamed]} />);
+    expect(screen.getByRole("link", { name: /Display nickname/ })).toBeInTheDocument();
+    expect(screen.queryByText("Reader work")).toBeNull();
+    catalog.unmount();
+
+    render(
+      <SessionHeader
+        session={{
+          ...nicknamed,
+          sourceId: "native-session",
+          diagnostics: [],
+          itemCount: 0,
+        }}
+        visibility={DEFAULT_TIMELINE_VISIBILITY}
+        onVisibilityChange={vi.fn()}
+        autoRefreshEnabled={false}
+        onAutoRefreshChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Display nickname" })).toBeInTheDocument();
+    expect(screen.queryByText("Reader work")).toBeNull();
+  });
+
   it("falls back when the session update timestamp is invalid", () => {
     render(
       <SessionHeader

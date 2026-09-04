@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { CODEX_INTERACTION_KEY_BINDINGS } from "../../src/server/adapters/codex/interaction-parser.js";
 import type { LiveRevision, TimelineCursor } from "../../src/shared/api-contract.js";
 import type { SessionDetail } from "../../src/shared/domain.js";
-import { createProcessLiveRevisionFactory } from "../../src/server/live/live-revision.js";
+import {
+  createProcessLiveRevisionFactory,
+  withLiveRevision,
+} from "../../src/server/live/live-revision.js";
 import { SessionLiveService } from "../../src/server/live/session-live-service.js";
 import type {
   LiveSessionSnapshot,
@@ -16,10 +19,16 @@ const OTHER_REVISION = "b".repeat(43) as LiveRevision;
 describe("SessionLiveService", () => {
   it("creates stable revisions that cover public session and effective interaction state", () => {
     const createRevision = createProcessLiveRevisionFactory(Buffer.alloc(32, 7));
-    const first = createRevision(SESSION, { supported: false });
-    expect(createRevision({ ...SESSION }, { supported: false })).toBe(first);
-    expect(createRevision({ ...SESSION, title: "Changed" }, { supported: false })).not.toBe(first);
-    expect(createRevision(SESSION, {
+    const revision = (
+      session: SessionDetail,
+      interaction: Parameters<typeof withLiveRevision>[0]["interaction"],
+    ) => withLiveRevision({ session, interaction }, createRevision).liveRevision;
+    const first = revision(SESSION, { supported: false });
+    expect(revision({ ...SESSION }, { supported: false })).toBe(first);
+    expect(revision({ ...SESSION, nickname: "Presentation only" }, { supported: false }))
+      .toBe(first);
+    expect(revision({ ...SESSION, title: "Changed" }, { supported: false })).not.toBe(first);
+    expect(revision(SESSION, {
       supported: true,
       state: "connected",
       activation: "activate",
@@ -152,6 +161,28 @@ function snapshot(hasMore: boolean, interaction = false): LiveSessionSnapshot {
   };
 }
 
+describe("nickname revision isolation", () => {
+  it("does not return a Live update for a nickname-only change", async () => {
+    const canonical = { ...SESSION, title: "Canonical title", archived: true };
+    const display = { ...canonical, nickname: "Nickname" };
+    const getLiveSession = vi.fn().mockResolvedValue({
+      session: display,
+      cursor: CURSOR,
+      hasMore: false,
+      interactionSession: { archived: true, interaction: null },
+    } satisfies LiveSessionSnapshot);
+    const service = createService(getLiveSession, {
+      createRevision: (session) =>
+        (session.title === "Canonical title" ? REVISION : OTHER_REVISION),
+    });
+
+    await expect(service.wait("session", {
+      cursor: CURSOR,
+      after: REVISION,
+    })).resolves.toBeNull();
+  });
+});
+
 const SESSION: SessionDetail = {
   id: "session",
   origin: {
@@ -162,6 +193,7 @@ const SESSION: SessionDetail = {
     formatVersion: null,
   },
   title: "Session",
+  nickname: null,
   cwd: null,
   createdAt: null,
   updatedAt: null,

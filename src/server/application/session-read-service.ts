@@ -9,7 +9,10 @@ import type {
   ToolDetailResponse,
 } from "../../shared/api-contract.js";
 import type { SessionId } from "../../shared/domain.js";
-import { SessionApiMapper } from "../api/session-api-mapper.js";
+import {
+  SessionApiMapper,
+  type SessionNicknameResolver,
+} from "../api/session-api-mapper.js";
 import {
   CatalogSnapshotStore,
   type CatalogSnapshotStoreDependencies,
@@ -35,17 +38,23 @@ export {
   RepositoryQueryError,
 };
 
+export interface SessionReadServiceDependencies extends CatalogSnapshotStoreDependencies {
+  readonly resolveNickname?: SessionNicknameResolver;
+}
+
 export class SessionReadService implements SessionReader {
   readonly #store: CatalogSnapshotStore;
   readonly #queries: SessionQueries;
-  readonly #mapper = new SessionApiMapper();
+  readonly #mapper: SessionApiMapper;
 
   constructor(
     sources: readonly SessionSource[],
     freshnessMs = DEFAULT_CATALOG_FRESHNESS_MS,
     now: () => number = performance.now.bind(performance),
-    storeDependencies?: CatalogSnapshotStoreDependencies,
+    dependencies: SessionReadServiceDependencies = {},
   ) {
+    const { resolveNickname, ...storeDependencies } = dependencies;
+    this.#mapper = new SessionApiMapper(resolveNickname);
     this.#store = new CatalogSnapshotStore(
       sources,
       freshnessMs,

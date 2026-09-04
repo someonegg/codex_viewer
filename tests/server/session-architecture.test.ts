@@ -148,6 +148,7 @@ describe("server architecture boundaries", () => {
         formatVersion: null,
       },
       title: "Session one",
+      nickname: null,
       cwd: "/project",
       createdAt: "2026-07-28T00:00:00Z",
       updatedAt: "2026-07-28T01:00:00Z",

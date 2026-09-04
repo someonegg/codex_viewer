@@ -7,9 +7,11 @@ import type {
 import type { SessionDetail } from "../../shared/domain.js";
 
 export type LiveRevisionFactory = (
-  session: SessionDetail,
+  session: LiveRevisionSession,
   interaction: InteractionResponse,
 ) => LiveRevision;
+
+export type LiveRevisionSession = Omit<SessionDetail, "nickname">;
 
 export function createProcessLiveRevisionFactory(
   secret: Uint8Array = randomBytes(32),
@@ -22,10 +24,14 @@ export function createProcessLiveRevisionFactory(
 export function withLiveRevision<T extends {
   readonly session: SessionDetail;
   readonly interaction: InteractionResponse;
-}>(value: T, createRevision: LiveRevisionFactory): T & Pick<SessionLiveResponse, "liveRevision"> {
+}>(
+  value: T,
+  createRevision: LiveRevisionFactory,
+): T & Pick<SessionLiveResponse, "liveRevision"> {
+  const { nickname: _nickname, ...revisionSession } = value.session;
   return {
     ...value,
-    liveRevision: createRevision(value.session, value.interaction),
+    liveRevision: createRevision(revisionSession, value.interaction),
   };
 }
 

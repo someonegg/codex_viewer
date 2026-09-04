@@ -72,15 +72,18 @@ describe("MPA pages", () => {
 
   it("opens the reader with one items request", async () => {
     window.history.replaceState(null, "", `/sessions/${SESSION_ID}`);
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify(itemPage()), {
+    const page = itemPage();
+    page.session.nickname = "Reader nickname";
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify(page), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     }));
     vi.stubGlobal("fetch", fetchMock);
     render(<SessionApp />);
 
-    expect(await screen.findByRole("heading", { name: "Reader work" })).toBeInTheDocument();
-    expect(document.title).toBe("Reader work · Codex Sessions");
+    expect(await screen.findByRole("heading", { name: "Reader nickname" })).toBeInTheDocument();
+    expect(document.title).toBe("Reader nickname · Codex Sessions");
+    expect(screen.queryByText("Reader work")).toBeNull();
     expect(screen.getByRole("checkbox", { name: "tool" })).not.toBeChecked();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toContain(`/api/v1/sessions/${SESSION_ID}/items?limit=300`);

@@ -4,6 +4,7 @@ import { ErrorState } from "./components/ErrorState";
 import { SessionReader } from "./components/SessionReader";
 import { useSessionReader } from "./state/use-session-reader";
 import { useTimelineVisibility } from "./state/use-timeline-visibility";
+import { sessionDisplayTitle } from "./session-title";
 
 export function SessionApp() {
   const sessionId = sessionIdFromPath(window.location.pathname);
@@ -16,7 +17,9 @@ export function SessionApp() {
 function SessionPage({ sessionId }: { sessionId: string }) {
   const timelineVisibility = useTimelineVisibility();
   const reader = useSessionReader(sessionId);
-  const sessionTitle = reader.context?.session.title ?? null;
+  const sessionTitle = reader.context === null
+    ? null
+    : sessionDisplayTitle(reader.context.session);
 
   useEffect(() => {
     document.title = sessionTitle === null

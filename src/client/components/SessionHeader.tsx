@@ -1,4 +1,5 @@
 import type { SessionDetail } from "../../shared/domain";
+import { sessionDisplayTitle } from "../session-title";
 import type {
   TimelineVisibility,
   TimelineVisibilityKey,
@@ -33,7 +34,7 @@ export function SessionHeader({
           <p className="eyebrow">Session trace</p>
           {session.archived ? <span className="archive-label">Archived</span> : null}
         </div>
-        <h2 id="session-title">{session.title}</h2>
+        <h2 id="session-title">{sessionDisplayTitle(session)}</h2>
         <p className="session-meta">
           {session.cwd ?? "Project unavailable"} · {updatedAt} · {session.itemCount} events
         </p>

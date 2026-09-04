@@ -11,6 +11,7 @@ import type { SessionInteractionService } from "../interaction/interaction-servi
 import {
   createProcessLiveRevisionFactory,
   type LiveRevisionFactory,
+  type LiveRevisionSession,
   withLiveRevision,
 } from "./live-revision.js";
 
@@ -84,7 +85,7 @@ export class SessionLiveService {
     this.#now = options.now ?? Date.now;
   }
 
-  revision(session: SessionLiveResponse["session"], interaction: InteractionResponse) {
+  revision(session: LiveRevisionSession, interaction: InteractionResponse) {
     return this.#createRevision(session, interaction);
   }
 
