@@ -113,8 +113,8 @@ describe("timeline prefix index", () => {
     )).toBe(false);
   });
 
-  it("forces a full rebuild when an old tool or directive detail reference changes", () => {
-    for (const detailKind of ["tool", "directive"] as const) {
+  it("forces a full rebuild when an old detail reference changes", () => {
+    for (const detailKind of ["tool", "directive", "internal"] as const) {
       const original = normalizedWithDetails();
       const replaced = replaceDetail(original, detailKind);
       const modes: string[] = [];
@@ -125,7 +125,7 @@ describe("timeline prefix index", () => {
       const first = registry.prepare(new Map([["session-id", original]]));
       first.commit();
       const firstIndex = first.sessions.get("session-id")!.timelinePrefixIndex;
-      const changedOrdinal = detailKind === "tool" ? 1 : 2;
+      const changedOrdinal = detailKind === "tool" ? 1 : detailKind === "directive" ? 2 : 3;
       const oldBoundary = firstIndex.boundaryAt(
         original.timeline,
         changedOrdinal,
@@ -172,7 +172,7 @@ function trackedBuilder(modes: string[]): TimelinePrefixIndexBuilder {
 
 function replaceDetail(
   original: NormalizedSession,
-  detailKind: "tool" | "directive",
+  detailKind: "tool" | "directive" | "internal",
 ): NormalizedSession {
   if (detailKind === "tool") {
     const toolDetails = new Map(original.toolDetails);
@@ -183,12 +183,17 @@ function replaceDetail(
     });
     return { ...original, toolDetails };
   }
-  const directiveDetails = new Map(original.directiveDetails);
-  directiveDetails.set("directive-2", {
-    text: "changed",
-    truncated: false,
-  });
-  return { ...original, directiveDetails };
+  if (detailKind === "directive") {
+    const directiveDetails = new Map(original.directiveDetails);
+    directiveDetails.set("directive-2", {
+      text: "changed",
+      truncated: false,
+    });
+    return { ...original, directiveDetails };
+  }
+  const internalDetails = new Map(original.internalDetails);
+  internalDetails.set("internal-3", { json: "changed", truncated: false });
+  return { ...original, internalDetails };
 }
 
 function appendMessage(
@@ -223,7 +228,7 @@ function normalizedWithDetails(): NormalizedSession {
   const value = normalized([]);
   return {
     ...value,
-    session: { ...value.session, toolCount: 1, itemCount: 2 },
+    session: { ...value.session, toolCount: 1, itemCount: 3 },
     timeline: [
       {
         kind: "tool",
@@ -247,6 +252,15 @@ function normalizedWithDetails(): NormalizedSession {
         truncated: false,
         hasDetail: true,
       },
+      {
+        kind: "internal",
+        id: "internal-3",
+        ordinal: 3,
+        timestamp: null,
+        eventType: "reasoning",
+        summary: "Internal event: reasoning",
+        truncated: false,
+      },
     ],
     toolDetails: new Map([["tool-1", {
       input: "input",
@@ -255,6 +269,10 @@ function normalizedWithDetails(): NormalizedSession {
     }]]),
     directiveDetails: new Map([["directive-2", {
       text: "directive",
+      truncated: false,
+    }]]),
+    internalDetails: new Map([["internal-3", {
+      json: "{\n  \"type\": \"reasoning\"\n}",
       truncated: false,
     }]]),
   };
@@ -298,6 +316,7 @@ function normalized(markdown: string[]): NormalizedSession {
     })),
     toolDetails: new Map(),
     directiveDetails: new Map(),
+    internalDetails: new Map(),
     interaction: null,
   };
 }

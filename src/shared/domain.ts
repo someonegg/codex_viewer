@@ -170,6 +170,7 @@ export interface InternalEventItem extends TimelineItemBase {
   kind: "internal";
   eventType: string;
   summary: string;
+  truncated: boolean;
 }
 
 export type TimelineItem =

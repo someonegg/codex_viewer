@@ -34,7 +34,8 @@ same open file handle used for probes and decoding.
 ## Record normalization
 
 - `session_meta` records do not become timeline items. A `turn_context` record
-  becomes an `internal` item without retaining its payload.
+  becomes an `internal` item whose decoded record is available only through its
+  lazy detail endpoint.
 - A `response_item` message is accepted only when its role is `user`,
   `assistant`, or `developer`.
 - Message content includes only `input_text`, `output_text`, and `text` parts.
@@ -52,16 +53,15 @@ same open file handle used for probes and decoding.
   `AgentMessage` phases `final` and `final_answer` normalize to `final`, while
   `commentary` is retained. Only `Plan` publishes its item type as the message's
   `itemType`; user and agent messages leave `itemType` unset. Empty, non-text,
-  and all other completed items become safe `internal` summaries without
-  retaining their payloads.
+  and all other completed items become `internal` events labeled
+  `item_completed.<subtype>` when the subtype is usable.
 - Every `token_count` event becomes a `token` item. Only non-negative integer
   counters in `total_token_usage` and `last_token_usage` are retained; missing
   groups become unavailable. Rate limits and unknown payload fields are
   discarded.
 - Every reasoning response becomes an `internal` item with event type
-  `reasoning`. A supported non-blank summary is retained as bounded plain text;
-  otherwise the item uses the safe `Internal event: reasoning` placeholder.
-  Encrypted reasoning content is never retained.
+  `reasoning`. Semantic summaries are not parsed; all compatibility summaries
+  use `Internal event: <eventType>`.
 - Recognized tool calls and outputs become separate append-stable tool items.
   An output links directly to its preceding call by `call_id` during the same
   forward scan.
@@ -78,7 +78,8 @@ Timeline pages include every normalized item kind. The client always displays
 user and assistant messages and `user_input` items, then independently filters
 `directive`, `tool`, `token`, and `internal` items. Those four technical
 event kinds are hidden by default and can be enabled without reloading the
-timeline. Directives up to 500 characters are shown inline as literal
+timeline. Internal events show only their type until the user requests their
+formatted JSON detail. Directives up to 500 characters are shown inline as literal
 plain-text blocks; longer directives retain their lazy detail control. An
 inline directive is also hidden when either of the two preceding or two
 following loaded timeline items is a message with exactly the same text. This
@@ -97,7 +98,8 @@ its cursor prefix.
 Truncation preserves an item but shortens its text; it is not filtering.
 Message text is capped at 1,000,000 characters. Directive detail and
 tool input/output are capped at 256,000 characters. Item summaries and tool
-previews share a 240-character limit.
+previews share a 240-character limit. Formatted internal JSON is capped at
+256 KiB by UTF-8 byte length and is truncated only at a valid character boundary.
 Timeline paging may defer items to a later page because of the 300-item and
 approximately 4 MiB response size budget. To guarantee forward progress, the
 first item on a page is always included even when it exceeds that budget.

@@ -2,6 +2,48 @@ import { describe, expect, it } from "vitest";
 import { normalizeRecords } from "./session-normalizer.fixtures.js";
 
 describe("internal event normalization", () => {
+  it("labels completed item subtypes safely and keeps formatted details out of timeline items", () => {
+    const normalized = normalizeRecords("internal-subtypes", [
+      { ordinal: 1, value: { type: "event_msg", payload: {
+        type: "item_completed", item: { type: "Extension", value: "secret" },
+      } } },
+      { ordinal: 2, value: { type: "event_msg", payload: {
+        type: "item_completed", item: { type: "Bad type/?", value: 2 },
+      } } },
+      { ordinal: 3, value: { type: "event_msg", payload: {
+        type: "item_completed", item: { value: 3 },
+      } } },
+    ]);
+
+    expect(normalized.timeline.map((item) => item.kind === "internal" && item.eventType))
+      .toEqual([
+        "item_completed.Extension",
+        "item_completed.Bad_type__",
+        "item_completed",
+      ]);
+    expect(JSON.stringify(normalized.timeline)).not.toContain("secret");
+    expect(normalized.internalDetails.get("internal-1")).toEqual({
+      json: JSON.stringify({
+        type: "event_msg",
+        payload: { type: "item_completed", item: { type: "Extension", value: "secret" } },
+      }, null, 2),
+      truncated: false,
+    });
+  });
+
+  it("truncates formatted JSON at a valid UTF-8 boundary", () => {
+    const normalized = normalizeRecords("internal-truncation", [{
+      ordinal: 1,
+      value: { type: "world_state", payload: { text: "😀".repeat(100_000) } },
+    }]);
+    const detail = normalized.internalDetails.get("internal-1")!;
+
+    expect(Buffer.byteLength(detail.json, "utf8")).toBeLessThanOrEqual(256 * 1024);
+    expect(detail.json).not.toContain("�");
+    expect(detail.truncated).toBe(true);
+    expect(normalized.timeline[0]).toMatchObject({ truncated: true });
+  });
+
   it("shows turn context safely and retains allowlisted total and last token usage", () => {
     const normalized = normalizeRecords("internal-detail-session", [
         {
@@ -62,6 +104,7 @@ describe("internal event normalization", () => {
         timestamp: "2026-07-28T20:00:00Z",
         eventType: "turn_context",
         summary: "Internal event: turn_context",
+        truncated: false,
       },
       {
         kind: "token",
@@ -98,10 +141,12 @@ describe("internal event normalization", () => {
         },
       },
     ]);
-    const serialized = JSON.stringify(normalized);
+    const serialized = JSON.stringify(normalized.timeline);
     expect(serialized).not.toContain("TURN_CONTEXT_MUST_NOT_RENDER");
     expect(serialized).not.toContain("MODEL_MUST_NOT_RENDER");
     expect(serialized).not.toContain("UNKNOWN_TOKEN_FIELD_MUST_NOT_RENDER");
     expect(serialized).not.toContain("RATE_LIMIT_MUST_NOT_RENDER");
+    expect(normalized.internalDetails.get("internal-1")?.json)
+      .toContain("TURN_CONTEXT_MUST_NOT_RENDER");
   });
 });

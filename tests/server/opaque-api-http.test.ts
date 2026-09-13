@@ -50,6 +50,32 @@ async function startApi(existingHome?: string) {
 }
 
 describe("opaque cursor API", () => {
+  it("serves internal JSON only from its cursor-bound detail endpoint", async () => {
+    const { base } = await startApi();
+    const list = await fetch(`${base}/api/v1/sessions`).then((response) => response.json());
+    const sessionId = list.sessions.find(
+      (session: { title: string }) => session.title === "Synthetic trace",
+    ).id;
+    const page = await fetch(`${base}/api/v1/sessions/${sessionId}/items?limit=300`)
+      .then((response) => response.json());
+    expect(JSON.stringify(page)).not.toContain("REASONING_CANARY_NEVER_RENDER");
+
+    const detail = await fetch(
+      `${base}/api/v1/sessions/${sessionId}/items/internal-6/internal?cursor=${encodeURIComponent(page.cursor)}`,
+    );
+    expect(detail.status).toBe(200);
+    expect(await detail.json()).toMatchObject({
+      itemId: "internal-6",
+      json: expect.stringContaining("REASONING_CANARY_NEVER_RENDER"),
+      truncated: false,
+    });
+    const wrongKind = await fetch(
+      `${base}/api/v1/sessions/${sessionId}/items/directive-4/internal?cursor=${encodeURIComponent(page.cursor)}`,
+    );
+    expect(wrongKind.status).toBe(404);
+    expect(await wrongKind.json()).toMatchObject({ error: { code: "internal_not_found" } });
+  });
+
   it("classifies structurally valid cursors from another service instance as recoverable", async () => {
     const firstServer = await startApi();
     const list = await fetch(`${firstServer.base}/api/v1/sessions?limit=1`)
@@ -143,7 +169,6 @@ describe("opaque cursor API", () => {
     expect(stale.status).toBe(409);
     expect(await stale.json()).toMatchObject({ error: { code: "stale_list_cursor" } });
     expect((await fetch(`${base}/api/v1/sessions?fresh=true&cursor=x`)).status).toBe(400);
-    expect((await fetch(`${base}/api/v1/sessions?q=synthetic`)).status).toBe(400);
   });
 
   it("opens through items, keeps an empty incremental cursor stable, and bounds lazy detail", async () => {

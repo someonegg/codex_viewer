@@ -1,8 +1,5 @@
 import type { DomainTimelineRecord } from "../../domain/session-domain.js";
-import {
-  internalItem,
-  reasoningInternalItem,
-} from "./internal-event-parser.js";
+import { internalItem } from "./internal-event-parser.js";
 import {
   responseDirective,
   type ParsedDirective,
@@ -37,7 +34,7 @@ export function parseResponseItem(
   if (type === "reasoning") {
     return {
       kind: "timeline",
-      value: reasoningInternalItem(ordinal, timestamp, payload.summary),
+      value: internalItem(ordinal, timestamp, "reasoning"),
     };
   }
   const userInput = userInputRequest(ordinal, timestamp, payload);

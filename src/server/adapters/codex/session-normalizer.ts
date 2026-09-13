@@ -2,6 +2,7 @@ import type {
   DomainDiagnostic,
   DomainAgentInteraction,
   DomainDirectiveDetail,
+  DomainInternalDetail,
   DomainSession,
   DomainSessionOrigin,
   DomainTimelineRecord,
@@ -15,6 +16,7 @@ import {
 } from "../../domain/session-text.js";
 import { MAX_SESSION_DIAGNOSTICS } from "./limits.js";
 import {
+  internalDetail,
   internalItem,
   internalItemFromPayload,
 } from "./internal-event-parser.js";
@@ -69,6 +71,7 @@ export interface SessionNormalizerState {
   readonly descriptor: RolloutDescriptor;
   readonly timeline: readonly DomainTimelineRecord[];
   readonly directiveDetails: ReadonlyMap<string, DomainDirectiveDetail>;
+  readonly internalDetails: ReadonlyMap<string, DomainInternalDetail>;
   readonly toolDetails: ReadonlyMap<string, DomainToolDetail>;
   readonly pendingToolCalls: ReadonlyMap<string, ToolCall>;
   readonly pendingUserInputRequests: ReadonlyMap<string, UserInputRequest>;
@@ -87,6 +90,7 @@ export class DefaultSessionNormalizer implements SessionNormalizer {
       descriptor,
       timeline: [],
       directiveDetails: new Map(),
+      internalDetails: new Map(),
       toolDetails: new Map(),
       pendingToolCalls: new Map(),
       pendingUserInputRequests: new Map(),
@@ -116,6 +120,7 @@ export class DefaultSessionNormalizer implements SessionNormalizer {
 
     const items: DomainTimelineRecord[] = [];
     const directiveDetails = new Map(state.directiveDetails);
+    const internalDetails = new Map(state.internalDetails);
     const toolDetails = new Map(state.toolDetails);
     const pendingToolCalls = new Map(state.pendingToolCalls);
     const pendingUserInputRequests = new Map(state.pendingUserInputRequests);
@@ -131,6 +136,7 @@ export class DefaultSessionNormalizer implements SessionNormalizer {
         record,
         items,
         directiveDetails,
+        internalDetails,
         toolDetails,
         pendingToolCalls,
         pendingUserInputRequests,
@@ -160,6 +166,9 @@ export class DefaultSessionNormalizer implements SessionNormalizer {
       directiveDetails: sameMapEntries(state.directiveDetails, directiveDetails)
         ? state.directiveDetails
         : directiveDetails,
+      internalDetails: sameMapEntries(state.internalDetails, internalDetails)
+        ? state.internalDetails
+        : internalDetails,
       toolDetails: sameMapEntries(state.toolDetails, toolDetails)
         ? state.toolDetails
         : toolDetails,
@@ -212,6 +221,7 @@ export class DefaultSessionNormalizer implements SessionNormalizer {
       timeline: state.timeline,
       toolDetails: state.toolDetails,
       directiveDetails: state.directiveDetails,
+      internalDetails: state.internalDetails,
       interaction: interaction(state),
     };
   }
@@ -276,6 +286,7 @@ function consumeRecord(
   record: DecodedRecord,
   items: DomainTimelineRecord[],
   directiveDetails: Map<string, DomainDirectiveDetail>,
+  internalDetails: Map<string, DomainInternalDetail>,
   toolDetails: Map<string, DomainToolDetail>,
   pendingToolCalls: Map<string, ToolCall>,
   pendingUserInputRequests: Map<string, UserInputRequest>,
@@ -293,22 +304,36 @@ function consumeRecord(
       pendingUserInputRequests,
       diagnostics,
     );
+    const item = items.at(-1);
+    if (item?.kind === "internal" && item.ordinal === record.ordinal) {
+      addInternalDetail(item, record, items, internalDetails);
+    }
     return;
   }
   if (record.value.type === "event_msg" && isObject(payload)) {
     const message = eventMessage(record.ordinal, timestamp, payload);
     if (message !== null) items.push(message);
-    else items.push(internalItemFromPayload(record.ordinal, timestamp, payload));
+    else {
+      const item = internalItemFromPayload(record.ordinal, timestamp, payload);
+      items.push(item);
+      if (item.kind === "internal") {
+        addInternalDetail(item, record, items, internalDetails);
+      }
+    }
     return;
   }
   if (record.value.type === "session_meta") return;
   if (record.value.type === "turn_context") {
-    items.push(internalItem(record.ordinal, timestamp, "turn_context"));
+    const item = internalItem(record.ordinal, timestamp, "turn_context");
+    items.push(item);
+    addInternalDetail(item, record, items, internalDetails);
     return;
   }
   const eventType = string(record.value.type);
   if (eventType !== null) {
-    items.push(internalItem(record.ordinal, timestamp, eventType));
+    const item = internalItem(record.ordinal, timestamp, eventType);
+    items.push(item);
+    addInternalDetail(item, record, items, internalDetails);
     return;
   }
   appendDiagnostic(diagnostics, {
@@ -317,6 +342,17 @@ function consumeRecord(
     message: "A record without a recognized type was reduced to a safe diagnostic.",
     ordinal: record.ordinal,
   });
+}
+
+function addInternalDetail(
+  item: Extract<DomainTimelineRecord, { kind: "internal" }>,
+  record: DecodedRecord,
+  items: DomainTimelineRecord[],
+  details: Map<string, DomainInternalDetail>,
+): void {
+  const detail = internalDetail(record.value);
+  details.set(item.id, detail);
+  if (detail.truncated) items[items.length - 1] = { ...item, truncated: true };
 }
 
 function appendDiagnostic(

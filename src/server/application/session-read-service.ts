@@ -2,6 +2,8 @@ import type {
   DirectiveDetailQuery,
   DirectiveDetailResponse,
   ItemPageQuery,
+  InternalDetailQuery,
+  InternalDetailResponse,
   SessionListQuery,
   SessionListResponse,
   TimelineCursor,
@@ -130,6 +132,16 @@ export class SessionReadService implements SessionReader {
     const snapshot = await this.#store.current();
     const result = this.#queries.directiveDetail(snapshot, id, itemId, query);
     return result === null ? null : this.#mapper.directiveDetail(itemId, result);
+  }
+
+  async getInternalDetail(
+    id: SessionId,
+    itemId: string,
+    query: InternalDetailQuery,
+  ): Promise<InternalDetailResponse | null> {
+    const snapshot = await this.#store.current();
+    const result = this.#queries.internalDetail(snapshot, id, itemId, query);
+    return result === null ? null : this.#mapper.internalDetail(itemId, result);
   }
 
   async getInteractionSession(

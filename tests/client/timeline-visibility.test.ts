@@ -121,6 +121,7 @@ function internal(ordinal: number): TimelineItem {
     timestamp: null,
     eventType: "test",
     summary: "test event",
+    truncated: false,
   };
 }
 

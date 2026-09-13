@@ -322,6 +322,7 @@ describe("secure HTTP foundation", () => {
       getLiveSession: unavailable,
       getToolDetail: unavailable,
       getDirectiveDetail: unavailable,
+      getInternalDetail: unavailable,
       getInteractionSession: unavailable,
       refresh: vi.fn(),
     };
@@ -347,6 +348,7 @@ describe("secure HTTP foundation", () => {
       getLiveSession: fail,
       getToolDetail: fail,
       getDirectiveDetail: fail,
+      getInternalDetail: fail,
       getInteractionSession: fail,
       refresh: fail,
     };

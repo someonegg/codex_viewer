@@ -390,6 +390,7 @@ function normalizedSession(id: string, title: string): NormalizedSession {
     timeline: [],
     toolDetails: new Map(),
     directiveDetails: new Map(),
+    internalDetails: new Map(),
   };
 }
 

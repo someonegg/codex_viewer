@@ -5,6 +5,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest";
 import { SessionApp } from "../../src/client/SessionApp";
 import { DirectiveItem } from "../../src/client/components/DirectiveItem";
+import { InternalEventItem } from "../../src/client/components/InternalEventItem";
 import { Timeline } from "../../src/client/components/Timeline";
 import { ToolItem } from "../../src/client/components/ToolItem";
 import type { ItemPageResponse, LiveRevision, TimelineCursor } from "../../src/shared/api-contract";
@@ -21,6 +22,49 @@ import {
 import { installIntersectionObserver, intersectLatest } from "./intersection-observer";
 
 describe("session reader items", () => {
+  it("lazily loads and reuses formatted internal JSON", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({
+      itemId: "internal-3",
+      json: "{\n  \"type\": \"reasoning\"\n}",
+      truncated: true,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<InternalEventItem
+      item={{ kind: "internal", id: "internal-3", ordinal: 3, timestamp: null,
+        eventType: "reasoning", summary: "must stay hidden", truncated: true }}
+      sessionId={SESSION_ID}
+      cursor={TIMELINE_CURSOR}
+      onTimelineConflict={vi.fn()}
+    />);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByText("must stay hidden")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show JSON" }));
+    expect(await screen.findByText(/\"type\": \"reasoning\"/)).toBeInTheDocument();
+    expect(screen.getByText("JSON was truncated for safe display.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hide JSON" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show JSON" }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports an internal detail timeline conflict", async () => {
+    const onTimelineConflict = vi.fn();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({
+      error: { code: "timeline_changed", message: "Timeline changed" },
+    }, 409)));
+    render(<InternalEventItem
+      item={{ kind: "internal", id: "internal-3", ordinal: 3, timestamp: null,
+        eventType: "reasoning", summary: "Internal event: reasoning", truncated: false }}
+      sessionId={SESSION_ID}
+      cursor={TIMELINE_CURSOR}
+      onTimelineConflict={onTimelineConflict}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Show JSON" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Internal event unavailable");
+    expect(onTimelineConflict).toHaveBeenCalledOnce();
+  });
+
   it("renders inline directives without requesting detail", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -131,7 +175,7 @@ describe("session reader items", () => {
   it("keeps automatic pagination available when all loaded events are filtered", () => {
     render(<Timeline
       items={[{ kind: "internal", id: "internal-1", ordinal: 1, timestamp: null,
-        eventType: "reasoning", summary: "hidden upstream" }]}
+        eventType: "reasoning", summary: "hidden upstream", truncated: false }]}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
       hasMore
@@ -148,7 +192,7 @@ describe("session reader items", () => {
       items={[
         message("message-mark", 1, "Message body"),
         { kind: "internal", id: "internal-mark", ordinal: 2, timestamp: null,
-          eventType: "reasoning", summary: "Internal body" },
+          eventType: "reasoning", summary: "Internal body", truncated: false },
       ]}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
@@ -222,12 +266,13 @@ describe("session reader items", () => {
     window.history.replaceState(null, "", `/sessions/${SESSION_ID}`);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(page([
       { kind: "internal", id: "internal-1", ordinal: 1, timestamp: null,
-        eventType: "reasoning", summary: "Internal body" },
+        eventType: "reasoning", summary: "Internal body", truncated: false },
     ]))));
     render(<SessionApp />);
     const checkbox = await screen.findByRole("checkbox", { name: "internal" });
     fireEvent.click(checkbox);
-    expect(screen.getByText(/Internal body/)).toBeInTheDocument();
+    expect(screen.getByText("reasoning", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.queryByText(/Internal body/)).not.toBeInTheDocument();
   });
 });
 

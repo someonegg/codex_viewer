@@ -199,6 +199,7 @@ export interface DomainInternalEventRecord extends DomainTimelineRecordBase {
   readonly kind: "internal";
   readonly eventType: string;
   readonly summary: string;
+  readonly truncated: boolean;
 }
 
 export type DomainTimelineRecord =
@@ -220,10 +221,16 @@ export interface DomainDirectiveDetail {
   readonly truncated: boolean;
 }
 
+export interface DomainInternalDetail {
+  readonly json: string;
+  readonly truncated: boolean;
+}
+
 export interface NormalizedSession {
   readonly session: DomainSession;
   readonly timeline: readonly DomainTimelineRecord[];
   readonly toolDetails: ReadonlyMap<DomainItemId, DomainToolDetail>;
   readonly directiveDetails: ReadonlyMap<DomainItemId, DomainDirectiveDetail>;
+  readonly internalDetails: ReadonlyMap<DomainItemId, DomainInternalDetail>;
   readonly interaction?: DomainAgentInteraction | null;
 }

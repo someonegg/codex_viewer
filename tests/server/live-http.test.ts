@@ -34,6 +34,7 @@ describe("Live update HTTP API", () => {
       getLiveSession: unavailable,
       getToolDetail: unavailable,
       getDirectiveDetail: unavailable,
+      getInternalDetail: unavailable,
       getInteractionSession: unavailable,
       refresh: vi.fn(),
     } satisfies SessionReader;
@@ -107,6 +108,7 @@ async function start(
     getLiveSession,
     getToolDetail: unavailable,
     getDirectiveDetail: unavailable,
+    getInternalDetail: unavailable,
     getInteractionSession: unavailable,
     refresh: vi.fn(),
   } satisfies SessionReader;

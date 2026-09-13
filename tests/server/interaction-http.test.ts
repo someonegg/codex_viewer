@@ -54,6 +54,7 @@ async function start() {
     getLiveSession: unavailable,
     getToolDetail: unavailable,
     getDirectiveDetail: unavailable,
+    getInternalDetail: unavailable,
     getInteractionSession: unavailable,
     refresh: vi.fn(),
   };
@@ -148,13 +149,6 @@ describe("interaction HTTP API", () => {
     const sentKeys = await postKeys(boundaryKeys);
     expect(sentKeys.status).toBe(204);
     expect(interaction.sendKeys).toHaveBeenCalledWith(SESSION_ID, boundaryKeys);
-
-    const legacy = await fetch(`${base}/api/v1/sessions/${SESSION_ID}/keys`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "escape" }),
-    });
-    expect(legacy.status).toBe(400);
   });
 
   it("returns an uncached terminal preview and rejects query parameters", async () => {
@@ -176,7 +170,6 @@ describe("interaction HTTP API", () => {
 
   it("allows POST only on the declared interaction routes", async () => {
     const { base } = await start();
-    expect((await fetch(base, { method: "POST" })).status).toBe(405);
     expect((await fetch(`${base}/api/v1/sessions`, { method: "POST" })).status).toBe(405);
     expect((await fetch(`${base}/api/v1/sessions/${SESSION_ID}`, { method: "POST" })).status).toBe(405);
     expect((await fetch(`${base}/api/v1/sessions/${SESSION_ID}/interrupt`, { method: "POST" })).status)

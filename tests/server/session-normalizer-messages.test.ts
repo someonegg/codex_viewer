@@ -260,16 +260,26 @@ describe("message and directive normalization", () => {
       }),
     ]);
 
-    expect(normalized.timeline).toEqual([1, 2, 3, 4, 5, 6, 7].map((ordinal) => ({
+    const subtypes = [
+      "UserMessage",
+      "AgentMessage",
+      "Reasoning",
+      "UnknownCompletion",
+      "Plan",
+      "ReviewMode",
+      "Extension",
+    ];
+    expect(normalized.timeline).toEqual(subtypes.map((subtype, index) => ({
       kind: "internal",
-      id: `internal-${ordinal}`,
-      ordinal,
+      id: `internal-${index + 1}`,
+      ordinal: index + 1,
       timestamp: null,
-      eventType: "item_completed",
-      summary: "Internal event: item_completed",
+      eventType: `item_completed.${subtype}`,
+      summary: `Internal event: item_completed.${subtype}`,
+      truncated: false,
     })));
     expect(normalized.session.messageCount).toBe(0);
-    const serialized = JSON.stringify(normalized);
+    const serialized = JSON.stringify(normalized.timeline);
     expect(serialized).not.toContain("AGENT_PAYLOAD_MUST_NOT_RENDER");
     expect(serialized).not.toContain("REASONING_PAYLOAD_MUST_NOT_RENDER");
     expect(serialized).not.toContain("UNKNOWN_PAYLOAD_MUST_NOT_RENDER");

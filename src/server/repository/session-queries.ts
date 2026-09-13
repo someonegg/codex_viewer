@@ -1,5 +1,6 @@
 import type {
   DomainDirectiveDetail,
+  DomainInternalDetail,
   DomainSession,
   DomainTimelineRecord,
   DomainToolDetail,
@@ -15,6 +16,7 @@ import {
 import { OpaqueCursorCodec } from "./opaque-cursor.js";
 import type {
   DirectiveDetailCriteria,
+  InternalDetailCriteria,
   ItemPageCriteria,
   SessionListCriteria,
   ToolDetailCriteria,
@@ -67,6 +69,10 @@ export interface ToolDetailResult {
 
 export interface DirectiveDetailResult {
   readonly detail: DomainDirectiveDetail;
+}
+
+export interface InternalDetailResult {
+  readonly detail: DomainInternalDetail;
 }
 
 export class SessionQueries {
@@ -220,6 +226,26 @@ export class SessionQueries {
       itemId,
       "directive",
       versioned.normalized.directiveDetails,
+    );
+    if (detail === null) return null;
+    assertItemConfirmed(versioned.normalized, itemId, boundary.throughOrdinal);
+    return { detail };
+  }
+
+  internalDetail(
+    snapshot: CatalogSnapshot,
+    id: string,
+    itemId: string,
+    query: InternalDetailCriteria,
+  ): InternalDetailResult | null {
+    const versioned = snapshot.sessions.get(id);
+    if (versioned === undefined) return null;
+    const boundary = this.#resolveReadBoundary(id, versioned, query.cursor);
+    const detail = itemDetail(
+      versioned.normalized,
+      itemId,
+      "internal",
+      versioned.normalized.internalDetails,
     );
     if (detail === null) return null;
     assertItemConfirmed(versioned.normalized, itemId, boundary.throughOrdinal);

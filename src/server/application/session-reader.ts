@@ -9,6 +9,8 @@ import type {
   TimelineCursor,
   ToolDetailQuery,
   ToolDetailResponse,
+  InternalDetailQuery,
+  InternalDetailResponse,
 } from "../../shared/api-contract.js";
 import type { SessionId } from "../../shared/domain.js";
 import type { DomainAgentInteraction } from "../domain/session-domain.js";
@@ -28,6 +30,11 @@ export interface SessionReader {
     itemId: string,
     query: DirectiveDetailQuery,
   ): Promise<DirectiveDetailResponse | null>;
+  getInternalDetail(
+    id: SessionId,
+    itemId: string,
+    query: InternalDetailQuery,
+  ): Promise<InternalDetailResponse | null>;
   refresh(): Promise<void>;
   getInteractionSession(id: SessionId): Promise<InteractionSessionSnapshot | null>;
 }

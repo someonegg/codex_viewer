@@ -300,6 +300,7 @@ function linkRelationships(
       timeline: item.normalized.timeline,
       toolDetails: item.normalized.toolDetails,
       directiveDetails: item.normalized.directiveDetails,
+      internalDetails: item.normalized.internalDetails,
       interaction: item.normalized.interaction ?? null,
     });
   }

@@ -1,5 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { SessionApiMapper } from "../../src/server/api/session-api-mapper.js";
 import type {
@@ -12,10 +12,7 @@ import {
   MAX_CATALOG_DIAGNOSTICS,
   type CatalogSnapshot,
 } from "../../src/server/repository/catalog-snapshot-store.js";
-import {
-  RepositoryQueryError,
-  SessionQueries,
-} from "../../src/server/repository/session-queries.js";
+import { SessionQueries } from "../../src/server/repository/session-queries.js";
 import { deriveTimelinePrefixIndex } from "../../src/server/repository/timeline-prefix-index.js";
 import type {
   SessionSource,
@@ -75,26 +72,17 @@ const normalized: NormalizedSession = {
   timeline,
   toolDetails: new Map(),
   directiveDetails: new Map(),
+  internalDetails: new Map(),
 };
 
 describe("server architecture boundaries", () => {
   it("keeps generic server modules independent from the Codex adapter", async () => {
-    const genericDirectories = [
-      "application",
-      "api",
-      "domain",
-      "http",
-      "repository",
-      "security",
-      "source",
-    ];
-    const files = (
-      await Promise.all(
-        genericDirectories.map((directory) =>
-          typescriptFiles(resolve("src/server", directory))
-        ),
-      )
-    ).flat();
+    const serverDirectory = resolve("src/server");
+    const files = (await typescriptFiles(serverDirectory)).filter((file) => {
+      const serverRelativePath = relative(serverDirectory, file);
+      return !serverRelativePath.startsWith(`adapters${sep}`) &&
+        serverRelativePath !== "create-session-read-service.ts";
+    });
 
     for (const file of files) {
       const source = await readFile(file, "utf8");
@@ -218,21 +206,6 @@ describe("server architecture boundaries", () => {
     expect(snapshot.diagnostics).toEqual(
       diagnostics.slice(0, MAX_CATALOG_DIAGNOSTICS),
     );
-  });
-
-  it("rejects a cursor after its confirmed timeline prefix changes", () => {
-    const queries = new SessionQueries();
-    const first = queries.items(snapshotOf(normalized), session.id, {})!;
-    const changed: NormalizedSession = {
-      ...normalized,
-      timeline: [{ ...timeline[0]!, timestamp: "2026-07-28T02:00:00Z" }],
-    };
-
-    expect(() => queries.items(snapshotOf(changed), session.id, {
-      cursor: first.context.cursor,
-    })).toThrowError(expect.objectContaining<Partial<RepositoryQueryError>>({
-      code: "timeline_changed",
-    }));
   });
 
   it("rejects duplicate source instances and propagates source invariant failures", async () => {

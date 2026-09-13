@@ -20,7 +20,7 @@ import {
 } from "./session-browser.fixtures";
 
 describe("session browser components", () => {
-  it("renders a reasoning summary as plain internal event text", () => {
+  it("renders an internal event type without its compatibility summary", () => {
     render(<Timeline
       items={[{
         kind: "internal",
@@ -29,6 +29,7 @@ describe("session browser components", () => {
         timestamp: null,
         eventType: "reasoning",
         summary: "Visible reasoning summary",
+        truncated: false,
       }]}
       sessionId={SESSION_ID}
       cursor={firstPage.cursor}
@@ -40,7 +41,8 @@ describe("session browser components", () => {
   
     expect(screen.getByText("Internal · 3")).toBeInTheDocument();
     expect(screen.getByText("reasoning", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.getByText(/Visible reasoning summary/)).toBeInTheDocument();
+    expect(screen.queryByText(/Visible reasoning summary/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show JSON" })).toBeInTheDocument();
   });
 
   it("renders detailed total and last token usage in separate groups", () => {

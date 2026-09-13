@@ -57,6 +57,12 @@ export function extendsTimelinePrefix(
     ) {
       return false;
     }
+    if (
+      item.kind === "internal" &&
+      previous.internalDetails.get(item.id) !== next.internalDetails.get(item.id)
+    ) {
+      return false;
+    }
   }
   return true;
 }
@@ -361,6 +367,15 @@ function writeTimelineItem(
     case "internal":
       writer.string("eventType", item.eventType);
       writer.string("summary", item.summary);
+      writer.boolean("truncated", item.truncated);
+      writer.nullableObject(
+        "detail",
+        normalized.internalDetails.get(item.id) ?? null,
+        (entry, detail) => {
+          entry.string("json", detail.json);
+          entry.boolean("truncated", detail.truncated);
+        },
+      );
       return;
   }
 }

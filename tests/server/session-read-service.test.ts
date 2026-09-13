@@ -292,6 +292,22 @@ describe("SessionReadService", () => {
       text: expect.stringContaining("DIRECTIVE_DETAIL_CANARY"),
       truncated: false,
     }));
+    const internal = allItems!.items.find((item) => item.id === "internal-6")!;
+    expect(allItems).not.toHaveProperty("internalDetails");
+    expect(JSON.stringify(allItems)).not.toContain("REASONING_CANARY_NEVER_RENDER");
+    expect(await repository.getInternalDetail(parent.id, internal.id, {
+      cursor: allItems!.cursor,
+    })).toEqual(expect.objectContaining({
+      itemId: internal.id,
+      json: expect.stringContaining("REASONING_CANARY_NEVER_RENDER"),
+      truncated: false,
+    }));
+    await expect(repository.getInternalDetail(parent.id, internal.id, {
+      cursor: page!.cursor,
+    })).rejects.toMatchObject({ code: "invalid_query" });
+    await expect(repository.getInternalDetail(parent.id, directive.id, {
+      cursor: allItems!.cursor,
+    })).resolves.toBeNull();
   });
 
   it("keeps confirmed timeline and detail cursors valid after append", async () => {
@@ -299,6 +315,7 @@ describe("SessionReadService", () => {
     const page = await repository.getItems(session.id, { limit: 2 });
     const allItems = await repository.getItems(session.id, { limit: 200 });
     const directive = allItems!.items.find((item) => item.id === "directive-4")!;
+    const internal = allItems!.items.find((item) => item.id === "internal-6")!;
     const previous = await readFile(rollout, "utf8");
     await writeFile(
       rollout,
@@ -318,11 +335,15 @@ describe("SessionReadService", () => {
     await expect(repository.getDirectiveDetail(session.id, directive.id, {
       cursor: allItems!.cursor,
     })).resolves.toEqual(expect.objectContaining({ itemId: directive.id }));
+    await expect(repository.getInternalDetail(session.id, internal.id, {
+      cursor: allItems!.cursor,
+    })).resolves.toEqual(expect.objectContaining({ itemId: internal.id }));
   });
 
   it("invalidates confirmed cursors after rollout replacement", async () => {
     const { repository, rollout, session } = await basicFixtureSession();
     const page = await repository.getItems(session.id, { limit: 2 });
+    const allItems = await repository.getItems(session.id, { limit: 200 });
     const replacement = `${rollout}.replacement`;
     await writeFile(
       replacement,
@@ -339,6 +360,9 @@ describe("SessionReadService", () => {
     })).rejects.toMatchObject({
       code: "timeline_changed",
     });
+    await expect(repository.getInternalDetail(session.id, "internal-6", {
+      cursor: allItems!.cursor,
+    })).rejects.toMatchObject({ code: "timeline_changed" });
   });
 
   it("keeps a loaded call prefix stable when an output is appended", async () => {
@@ -611,7 +635,7 @@ describe("SessionReadService", () => {
     )).toEqual(
       expect.objectContaining({
         id: "internal-6",
-        summary: "REASONING_SUMMARY_CANARY",
+        summary: "Internal event: reasoning",
       }),
     );
   });
@@ -827,6 +851,7 @@ function normalizedSession(
     timeline,
     toolDetails: new Map(),
     directiveDetails: new Map(),
+    internalDetails: new Map(),
   };
 }
 

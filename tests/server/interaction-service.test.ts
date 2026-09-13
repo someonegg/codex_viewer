@@ -18,6 +18,7 @@ function repository(snapshot: InteractionSessionSnapshot | null): SessionReader 
     getLiveSession: vi.fn(),
     getToolDetail: vi.fn(),
     getDirectiveDetail: vi.fn(),
+    getInternalDetail: vi.fn(),
     getInteractionSession: vi.fn().mockResolvedValue(snapshot),
     refresh: vi.fn(),
   };

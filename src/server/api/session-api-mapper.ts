@@ -1,6 +1,7 @@
 import type {
   DirectiveDetailResponse,
   ItemPageResponse,
+  InternalDetailResponse,
   ListCursor,
   SessionDetailResponse,
   SessionListResponse,
@@ -21,6 +22,7 @@ import type {
 import type {
   DirectiveDetailResult,
   ItemPageResult,
+  InternalDetailResult,
   SessionListResult,
   ToolDetailResult,
 } from "../repository/session-queries.js";
@@ -77,6 +79,17 @@ export class SessionApiMapper {
     return {
       itemId,
       text: result.detail.text,
+      truncated: result.detail.truncated,
+    };
+  }
+
+  internalDetail(
+    itemId: string,
+    result: InternalDetailResult,
+  ): InternalDetailResponse {
+    return {
+      itemId,
+      json: result.detail.json,
       truncated: result.detail.truncated,
     };
   }

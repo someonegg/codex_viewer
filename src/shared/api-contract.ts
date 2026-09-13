@@ -112,6 +112,16 @@ export interface DirectiveDetailQuery {
   cursor: TimelineCursor;
 }
 
+export interface InternalDetailResponse {
+  itemId: ItemId;
+  json: string;
+  truncated: boolean;
+}
+
+export interface InternalDetailQuery {
+  cursor: TimelineCursor;
+}
+
 export type InteractionState =
   | "unbound"
   | "disconnected"

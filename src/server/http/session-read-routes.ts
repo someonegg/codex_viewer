@@ -2,6 +2,7 @@ import type { ServerResponse } from "node:http";
 import type {
   DirectiveDetailQuery,
   ItemPageQuery,
+  InternalDetailQuery,
   SessionListQuery,
   TimelineCursor,
   ToolDetailQuery,
@@ -101,6 +102,24 @@ export function createSessionReadRoutes(dependencies: {
         segments.length === 3 &&
         segments[0] === "items" &&
         isItemId(itemId) &&
+        segments[2] === "internal"
+      ) {
+        if (!readMethod) return false;
+        const result = await dependencies.sessions.getInternalDetail(
+          id,
+          itemId,
+          parseInternalQuery(url.searchParams),
+        );
+        if (result === null) {
+          return notFound(response, headOnly, "internal_not_found");
+        }
+        sendJson(response, 200, result, headOnly);
+        return true;
+      }
+      if (
+        segments.length === 3 &&
+        segments[0] === "items" &&
+        isItemId(itemId) &&
         segments[2] === "directive"
       ) {
         if (!readMethod) return false;
@@ -183,6 +202,11 @@ function parseToolQuery(params: URLSearchParams): ToolDetailQuery {
 function parseDirectiveQuery(params: URLSearchParams): DirectiveDetailQuery {
   only(params, ["cursor"]);
   return { cursor: requiredCursor(params, "directive detail") };
+}
+
+function parseInternalQuery(params: URLSearchParams): InternalDetailQuery {
+  only(params, ["cursor"]);
+  return { cursor: requiredCursor(params, "internal detail") };
 }
 
 function requiredCursor(params: URLSearchParams, resource: string): TimelineCursor {

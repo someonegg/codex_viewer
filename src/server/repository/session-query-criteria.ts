@@ -19,3 +19,7 @@ export interface ToolDetailCriteria {
 export interface DirectiveDetailCriteria {
   readonly cursor: string;
 }
+
+export interface InternalDetailCriteria {
+  readonly cursor: string;
+}

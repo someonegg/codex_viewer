@@ -3,6 +3,8 @@ import type {
   DirectiveDetailQuery,
   DirectiveDetailResponse,
   InteractionKey,
+  InternalDetailQuery,
+  InternalDetailResponse,
   ItemPageQuery,
   ItemPageResponse,
   SessionLiveQuery,
@@ -127,6 +129,16 @@ export const api = {
   ) =>
     request<DirectiveDetailResponse>(
       `/api/v1/sessions/${encodeURIComponent(sessionId)}/items/${encodeURIComponent(itemId)}/directive${queryString({ cursor: query.cursor })}`,
+      signal,
+    ),
+  internal: (
+    sessionId: string,
+    itemId: string,
+    query: InternalDetailQuery,
+    signal?: AbortSignal,
+  ) =>
+    request<InternalDetailResponse>(
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/items/${encodeURIComponent(itemId)}/internal${queryString({ cursor: query.cursor })}`,
       signal,
     ),
   sendMessage: (sessionId: string, message: string, signal?: AbortSignal) =>

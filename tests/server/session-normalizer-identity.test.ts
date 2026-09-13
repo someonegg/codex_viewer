@@ -38,7 +38,7 @@ describe("session identity and recovery", () => {
       expect.objectContaining({
         id: "internal-6",
         eventType: "reasoning",
-        summary: "REASONING_SUMMARY_CANARY",
+        summary: "Internal event: reasoning",
       }),
       expect.objectContaining({
         id: "internal-18",
@@ -46,9 +46,9 @@ describe("session identity and recovery", () => {
         summary: "Internal event: reasoning",
       }),
     ]);
-    expect(JSON.stringify(normalized)).not.toContain("REASONING_CANARY_NEVER_RENDER");
-    expect(JSON.stringify(normalized)).not.toContain("EMPTY_REASONING_CANARY_NEVER_RENDER");
-    expect(JSON.stringify(normalized)).not.toContain("INTERNAL_PAYLOAD_CANARY");
+    expect(JSON.stringify(normalized.timeline)).not.toContain("REASONING_CANARY_NEVER_RENDER");
+    expect(JSON.stringify(normalized.timeline)).not.toContain("EMPTY_REASONING_CANARY_NEVER_RENDER");
+    expect(JSON.stringify(normalized.timeline)).not.toContain("INTERNAL_PAYLOAD_CANARY");
     expect(normalized.session.title).toBe("Synthetic trace");
   });
 

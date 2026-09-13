@@ -105,7 +105,14 @@ function TimelineContent({
     case "token":
       return <TokenItem item={item} />;
     case "internal":
-      return <InternalEventItem item={item} />;
+      return (
+        <InternalEventItem
+          item={item}
+          sessionId={sessionId}
+          cursor={cursor}
+          onTimelineConflict={onTimelineConflict}
+        />
+      );
   }
 }
 
