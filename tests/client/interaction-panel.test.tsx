@@ -2,8 +2,9 @@
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InteractionPanel } from "../../src/client/components/InteractionPanel";
+import { INTERACTION_PANEL_STORAGE_KEY } from "../../src/client/state/use-interaction-panel-preference";
 import type { InteractionResponse } from "../../src/shared/api-contract";
 
 const activation = "! printf 'CODEX_VIEWER_TMUX_BIND_V1\\n%s\\n%s\\n' \"$TMUX\" \"$TMUX_PANE\"";
@@ -38,6 +39,70 @@ function props(value: InteractionResponse | null) {
 }
 
 describe("interaction panel", () => {
+  beforeEach(() => {
+    sessionStorage.setItem(INTERACTION_PANEL_STORAGE_KEY, "true");
+  });
+
+  it("defaults to a collapsed summary and persists the disclosure choice", async () => {
+    sessionStorage.removeItem(INTERACTION_PANEL_STORAGE_KEY);
+    const user = userEvent.setup();
+    const handlers = props(interaction("connected"));
+    const { unmount } = render(<InteractionPanel {...handlers} />);
+
+    const toggle = screen.getByRole("button", { name: /Live interaction.*Connected/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText(/12 events · Updated/)).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Message to agent" })).toBeNull();
+    expect(handlers.onPreviewTerminal).not.toHaveBeenCalled();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("textbox", { name: "Message to agent" })).toBeInTheDocument();
+    expect(sessionStorage.getItem(INTERACTION_PANEL_STORAGE_KEY)).toBe("true");
+
+    unmount();
+    render(<InteractionPanel {...handlers} />);
+    expect(screen.getByRole("button", { name: /Live interaction.*Connected/i }))
+      .toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("keeps attention states collapsed and exposes them in the heading", () => {
+    sessionStorage.setItem(INTERACTION_PANEL_STORAGE_KEY, "false");
+    const { rerender } = render(
+      <InteractionPanel {...props(interaction("unbound"))} />,
+    );
+    expect(screen.getByRole("button", { name: /Needs activation/i }))
+      .toHaveAttribute("aria-expanded", "false");
+
+    rerender(<InteractionPanel {...props(interaction("disconnected"))} />);
+    expect(screen.getByRole("button", { name: /Disconnected/i }))
+      .toHaveAttribute("aria-expanded", "false");
+
+    rerender(<InteractionPanel {...props(interaction("connected"))} error="send failed" />);
+    expect(screen.getByRole("button", { name: /Error/i }))
+      .toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("preserves drafts and pauses terminal polling while the outer panel is collapsed", async () => {
+    const user = userEvent.setup();
+    const handlers = {
+      ...props(interaction("connected")),
+      preview: { content: "output", truncated: false, capturedAt: "2026-08-08T12:00:00.000Z" },
+    };
+    render(<InteractionPanel {...handlers} />);
+    await user.type(screen.getByRole("textbox", { name: "Message to agent" }), "draft");
+    handlers.onCancelPreviewTerminal.mockClear();
+
+    await user.click(screen.getByRole("button", { name: /Live interaction.*Connected/i }));
+    expect(screen.queryByRole("textbox", { name: "Message to agent" })).toBeNull();
+    expect(handlers.onCancelPreviewTerminal).toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /Live interaction.*Connected/i }));
+    expect(screen.getByRole("textbox", { name: "Message to agent" })).toHaveValue("draft");
+    expect(screen.getByLabelText("Terminal preview content")).toHaveTextContent("output");
+  });
+
   it("keeps unsupported sessions as a pure viewer", () => {
     const { container, rerender } = render(<InteractionPanel {...props(null)} />);
     expect(container).toBeEmptyDOMElement();
