@@ -335,6 +335,13 @@
   -webkit-box-orient: vertical; -webkit-line-clamp: 3;
 }
 .tool-detail { margin-top: .8rem; }
+.detail-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
+.character-count {
+  display: inline-flex; flex: 0 0 auto; padding: .12rem .42rem;
+  color: var(--current); background: color-mix(in srgb, var(--current) 9%, transparent);
+  border-radius: 999px; font-family: var(--mono-font); font-size: .68rem;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em; white-space: nowrap;
+}
 .tool-call-id { color: var(--ink-soft); font-size: .72rem; }
 .tool-call-id code { font-family: var(--mono-font); overflow-wrap: anywhere; }
 .user-input-card {

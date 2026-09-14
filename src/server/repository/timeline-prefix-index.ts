@@ -6,7 +6,7 @@ import type {
 } from "../domain/session-domain.js";
 
 const PREFIX_BYTES = 24;
-const PREFIX_PROTOCOL = "timeline-prefix-v1";
+const PREFIX_PROTOCOL = "timeline-prefix-v2";
 
 export function deriveTimelinePrefixIndex(
   normalized: NormalizedSession,
@@ -298,14 +298,13 @@ function writeTimelineItem(
       writer.string("markdown", item.markdown);
       return;
     case "directive":
-      writer.number("charCount", item.charCount);
       writer.boolean("hasDetail", item.hasDetail);
       if (!item.hasDetail) {
         writer.string("text", item.text);
         return;
       }
       writer.string("summary", item.summary);
-      writer.boolean("truncated", item.truncated);
+      writer.number("charCount", item.charCount);
       writer.nullableObject(
         "detail",
         normalized.directiveDetails.get(item.id) ?? null,
@@ -321,7 +320,7 @@ function writeTimelineItem(
       writer.string("toolName", item.toolName);
       if (item.stage === "output") writer.string("status", item.status);
       writer.nullableString("preview", item.preview);
-      writer.boolean("truncated", item.truncated);
+      writer.number("charCount", item.charCount);
       writer.boolean("hasDetail", item.hasDetail);
       writer.nullableObject(
         "detail",
@@ -366,8 +365,6 @@ function writeTimelineItem(
       return;
     case "internal":
       writer.string("eventType", item.eventType);
-      writer.string("summary", item.summary);
-      writer.boolean("truncated", item.truncated);
       writer.nullableObject(
         "detail",
         normalized.internalDetails.get(item.id) ?? null,

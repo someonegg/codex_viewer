@@ -239,7 +239,7 @@ function normalizedWithDetails(): NormalizedSession {
         callId: "call",
         toolName: "inspect",
         preview: "input",
-        truncated: false,
+        charCount: 5,
         hasDetail: true,
       },
       {
@@ -249,7 +249,6 @@ function normalizedWithDetails(): NormalizedSession {
         timestamp: null,
         summary: "directive",
         charCount: 9,
-        truncated: false,
         hasDetail: true,
       },
       {
@@ -258,8 +257,6 @@ function normalizedWithDetails(): NormalizedSession {
         ordinal: 3,
         timestamp: null,
         eventType: "reasoning",
-        summary: "Internal event: reasoning",
-        truncated: false,
       },
     ],
     toolDetails: new Map([["tool-1", {

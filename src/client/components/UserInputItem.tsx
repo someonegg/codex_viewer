@@ -3,6 +3,7 @@ import type {
   UserInputItem as UserInputTimelineItem,
   UserInputRequestItem,
 } from "../../shared/domain";
+import { EventTime } from "./EventTime";
 
 type UserInputResponseItem = Exclude<UserInputTimelineItem, { stage: "request" }>;
 
@@ -10,6 +11,7 @@ export interface UserInputCardEntry {
   kind: "user_input";
   id: string;
   ordinal: number;
+  timestamp: string | null;
   request: UserInputRequestItem | null;
   response: UserInputResponseItem | null;
 }
@@ -26,7 +28,9 @@ export function UserInputItem({ entry }: { entry: UserInputCardEntry }) {
   return (
     <article className="user-input-card">
       <div className="user-input-heading">
-        <p className="event-label">User input · {entry.ordinal}</p>
+        <p className="event-label">
+          User input · {entry.ordinal}<EventTime timestamp={entry.timestamp} />
+        </p>
         <span className={`user-input-status ${statusClass(entry.response)}`}>
           {statusLabel(entry.response)}
         </span>

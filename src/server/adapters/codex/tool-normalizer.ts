@@ -33,7 +33,6 @@ export function normalizeToolCall(call: ToolCall): NormalizedTool {
   const input = truncateNullable(call.input);
   const preview = previewText(call.input);
   const detailTruncated = input.truncated;
-  const itemTruncated = detailTruncated || preview.truncated;
   return {
     item: {
       kind: "tool",
@@ -44,7 +43,7 @@ export function normalizeToolCall(call: ToolCall): NormalizedTool {
       callId: call.callId,
       toolName: call.toolName,
       preview: preview.text,
-      truncated: itemTruncated,
+      charCount: call.input?.length ?? 0,
       hasDetail: call.input !== null,
     },
     detail: { input: input.text, output: null, truncated: detailTruncated },
@@ -63,7 +62,6 @@ export function normalizeToolOutput(
       : call?.input ?? null,
   );
   const detailTruncated = input.truncated || result.truncated;
-  const itemTruncated = detailTruncated || preview.truncated;
   return {
     item: {
       kind: "tool",
@@ -75,7 +73,7 @@ export function normalizeToolOutput(
       toolName: call?.toolName ?? "unknown tool",
       status: output.failed ? "failed" : "completed",
       preview: preview.text,
-      truncated: itemTruncated,
+      charCount: (call?.input?.length ?? 0) + (output.output?.length ?? 0),
       hasDetail: (call?.input !== null && call?.input !== undefined) ||
         output.output !== null,
     },

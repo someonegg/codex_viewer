@@ -63,7 +63,6 @@ export interface MessageItem extends TimelineItemBase {
 
 interface DirectiveItemBase extends TimelineItemBase {
   kind: "directive";
-  charCount: number;
 }
 
 export interface InlineDirectiveItem extends DirectiveItemBase {
@@ -74,7 +73,7 @@ export interface InlineDirectiveItem extends DirectiveItemBase {
 export interface LazyDirectiveItem extends DirectiveItemBase {
   hasDetail: true;
   summary: string;
-  truncated: boolean;
+  charCount: number;
 }
 
 export type DirectiveItem = InlineDirectiveItem | LazyDirectiveItem;
@@ -84,7 +83,7 @@ interface ToolItemBase extends TimelineItemBase {
   callId: string;
   toolName: string;
   preview: string | null;
-  truncated: boolean;
+  charCount: number;
   hasDetail: boolean;
 }
 
@@ -169,8 +168,6 @@ export interface TokenItem extends TimelineItemBase {
 export interface InternalEventItem extends TimelineItemBase {
   kind: "internal";
   eventType: string;
-  summary: string;
-  truncated: boolean;
 }
 
 export type TimelineItem =

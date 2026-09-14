@@ -69,7 +69,7 @@ same open file handle used for probes and decoding.
   append-stable `user_input` items linked by `call_id`. Requests retain their
   questions and options. Outputs retain exact answers, an aborted outcome, or a
   safe unavailable fallback when their shape is not recognized.
-- Other typed records become safe `internal` summaries. A record without a
+- Other typed records become safe `internal` event types. A record without a
   usable type becomes a diagnostic.
 
 ## Client visibility
@@ -79,7 +79,7 @@ user and assistant messages and `user_input` items, then independently filters
 `directive`, `tool`, `token`, and `internal` items. Those four technical
 event kinds are hidden by default and can be enabled without reloading the
 timeline. Internal events show only their type until the user requests their
-formatted JSON detail. Directives up to 500 characters are shown inline as literal
+formatted JSON detail. Directives up to 512 JavaScript code units are shown inline as literal
 plain-text blocks; longer directives retain their lazy detail control. An
 inline directive is also hidden when either of the two preceding or two
 following loaded timeline items is a message with exactly the same text. This
@@ -96,10 +96,11 @@ its cursor prefix.
 ## Truncation and paging
 
 Truncation preserves an item but shortens its text; it is not filtering.
-Message text is capped at 1,000,000 characters. Directive detail and
-tool input/output are capped at 256,000 characters. Item summaries and tool
-previews share a 240-character limit. Formatted internal JSON is capped at
-256 KiB by UTF-8 byte length and is truncated only at a valid character boundary.
+Message text is capped at 1,000,000 JavaScript code units. Directive, tool, and
+formatted internal JSON details are capped at 256,000 code units. Directive and
+unavailable-user-input summaries and tool previews share a 256-code-unit limit.
+Terminal previews are separately capped at 256,000 UTF-8 bytes and retain only
+complete UTF-8 characters.
 Timeline paging may defer items to a later page because of the 300-item and
 approximately 4 MiB response size budget. To guarantee forward progress, the
 first item on a page is always included even when it exceeds that budget.

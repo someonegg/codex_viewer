@@ -8,7 +8,7 @@ import type {
 } from "../domain/session-domain.js";
 
 export { MAX_INTERACTION_MESSAGE_BYTES };
-export const MAX_TERMINAL_PREVIEW_BYTES = 256 * 1024;
+export const MAX_TERMINAL_PREVIEW_BYTES = 256_000;
 const DEFAULT_TIMEOUT_MS = 5_000;
 const MAX_COMMAND_OUTPUT_BYTES = 64 * 1024;
 

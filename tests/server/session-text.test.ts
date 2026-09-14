@@ -2,9 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_SESSION_TITLE_CHARS,
   sessionTitleFromMarkdown,
+  truncateText,
 } from "../../src/server/domain/session-text.js";
 
 describe("session title text", () => {
+  it("does not split a UTF-16 surrogate pair at the code-unit limit", () => {
+    const prefix = "x".repeat(3);
+
+    expect(truncateText(`${prefix}😀tail`, 4)).toEqual({
+      text: prefix,
+      truncated: true,
+    });
+  });
+
   it.each([
     ["intro\n\n# ATX level one", "ATX level one"],
     ["intro\n\n## ATX level two", "ATX level two"],

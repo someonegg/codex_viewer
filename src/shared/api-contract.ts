@@ -1,6 +1,5 @@
 import type {
   Diagnostic,
-  ItemId,
   SessionDetail,
   SessionSummary,
   TimelineItem,
@@ -92,7 +91,6 @@ export interface SessionLiveResponse {
 }
 
 export interface ToolDetailResponse {
-  itemId: ItemId;
   input: string | null;
   output: string | null;
   truncated: boolean;
@@ -103,7 +101,6 @@ export interface ToolDetailQuery {
 }
 
 export interface DirectiveDetailResponse {
-  itemId: ItemId;
   text: string;
   truncated: boolean;
 }
@@ -113,7 +110,6 @@ export interface DirectiveDetailQuery {
 }
 
 export interface InternalDetailResponse {
-  itemId: ItemId;
   json: string;
   truncated: boolean;
 }

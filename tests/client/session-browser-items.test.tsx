@@ -24,14 +24,13 @@ import { installIntersectionObserver, intersectLatest } from "./intersection-obs
 describe("session reader items", () => {
   it("lazily loads and reuses formatted internal JSON", async () => {
     const fetchMock = vi.fn().mockResolvedValue(json({
-      itemId: "internal-3",
       json: "{\n  \"type\": \"reasoning\"\n}",
       truncated: true,
     }));
     vi.stubGlobal("fetch", fetchMock);
     render(<InternalEventItem
       item={{ kind: "internal", id: "internal-3", ordinal: 3, timestamp: null,
-        eventType: "reasoning", summary: "must stay hidden", truncated: true }}
+        eventType: "reasoning" }}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
       onTimelineConflict={vi.fn()}
@@ -54,7 +53,7 @@ describe("session reader items", () => {
     }, 409)));
     render(<InternalEventItem
       item={{ kind: "internal", id: "internal-3", ordinal: 3, timestamp: null,
-        eventType: "reasoning", summary: "Internal event: reasoning", truncated: false }}
+        eventType: "reasoning" }}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
       onTimelineConflict={onTimelineConflict}
@@ -70,7 +69,7 @@ describe("session reader items", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DirectiveItem
       item={{ kind: "directive", id: "directive-inline", ordinal: 1, timestamp: null,
-        hasDetail: false, text: "Inline policy", charCount: 13 }}
+        hasDetail: false, text: "Inline policy" }}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
       onTimelineConflict={vi.fn()}
@@ -81,8 +80,8 @@ describe("session reader items", () => {
 
   it("labels tool stages and renders only stage-appropriate detail", async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(json({ itemId: "tool-call", input: "args", output: "hidden", truncated: false }))
-      .mockResolvedValueOnce(json({ itemId: "tool-output", input: "args", output: "result", truncated: false }));
+      .mockResolvedValueOnce(json({ input: "args", output: "hidden", truncated: false }))
+      .mockResolvedValueOnce(json({ input: "args", output: "result", truncated: false }));
     vi.stubGlobal("fetch", fetchMock);
     render(<>
       <ToolItem item={{ ...toolItem, id: "tool-call", stage: "call" }} sessionId={SESSION_ID}
@@ -97,6 +96,7 @@ describe("session reader items", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show tool detail" }));
     expect(await screen.findByText("result")).toBeInTheDocument();
     expect(screen.getByText(/Tool output · failed/)).toBeInTheDocument();
+    expect(screen.getAllByText("7 characters")[0]).toHaveClass("character-count");
   });
 
   it("opens a session under React StrictMode", async () => {
@@ -175,7 +175,7 @@ describe("session reader items", () => {
   it("keeps automatic pagination available when all loaded events are filtered", () => {
     render(<Timeline
       items={[{ kind: "internal", id: "internal-1", ordinal: 1, timestamp: null,
-        eventType: "reasoning", summary: "hidden upstream", truncated: false }]}
+        eventType: "reasoning" }]}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
       hasMore
@@ -192,7 +192,7 @@ describe("session reader items", () => {
       items={[
         message("message-mark", 1, "Message body"),
         { kind: "internal", id: "internal-mark", ordinal: 2, timestamp: null,
-          eventType: "reasoning", summary: "Internal body", truncated: false },
+          eventType: "reasoning" },
       ]}
       sessionId={SESSION_ID}
       cursor={TIMELINE_CURSOR}
@@ -224,10 +224,11 @@ describe("session reader items", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show directive" }));
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls.every(([url]) => String(url).includes("cursor=opaque.timeline.cursor"))).toBe(true);
-    pending[1]!(json({ itemId: directiveItem.id, text: "Directive body", truncated: false }));
-    pending[0]!(json({ itemId: toolItem.id, input: "input", output: "output", truncated: false }));
+    pending[1]!(json({ text: "Directive body", truncated: false }));
+    pending[0]!(json({ input: "input", output: "output", truncated: false }));
     expect(await screen.findByText("Directive body")).toBeInTheDocument();
     expect(await screen.findByText("input")).toBeInTheDocument();
+    expect(screen.getByText("1,892 characters")).toHaveClass("character-count");
   });
 
   it("keeps pending lazy detail when the cursor advances", async () => {
@@ -244,7 +245,7 @@ describe("session reader items", () => {
       cursor={NEXT_TIMELINE_CURSOR} onTimelineConflict={onTimelineConflict} />);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).signal?.aborted).toBe(false);
-    resolveDetail(json({ itemId: toolItem.id, input: "loaded detail", output: null, truncated: false }));
+    resolveDetail(json({ input: "loaded detail", output: null, truncated: false }));
     expect(await screen.findByText("loaded detail")).toBeInTheDocument();
   });
 
@@ -266,7 +267,7 @@ describe("session reader items", () => {
     window.history.replaceState(null, "", `/sessions/${SESSION_ID}`);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(page([
       { kind: "internal", id: "internal-1", ordinal: 1, timestamp: null,
-        eventType: "reasoning", summary: "Internal body", truncated: false },
+        eventType: "reasoning" },
     ]))));
     render(<SessionApp />);
     const checkbox = await screen.findByRole("checkbox", { name: "internal" });

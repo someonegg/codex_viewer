@@ -121,7 +121,7 @@ export class SessionReadService implements SessionReader {
   ): Promise<ToolDetailResponse | null> {
     const snapshot = await this.#store.current();
     const result = this.#queries.toolDetail(snapshot, id, itemId, query);
-    return result === null ? null : this.#mapper.toolDetail(itemId, result);
+    return result === null ? null : this.#mapper.toolDetail(result);
   }
 
   async getDirectiveDetail(
@@ -131,7 +131,7 @@ export class SessionReadService implements SessionReader {
   ): Promise<DirectiveDetailResponse | null> {
     const snapshot = await this.#store.current();
     const result = this.#queries.directiveDetail(snapshot, id, itemId, query);
-    return result === null ? null : this.#mapper.directiveDetail(itemId, result);
+    return result === null ? null : this.#mapper.directiveDetail(result);
   }
 
   async getInternalDetail(
@@ -141,7 +141,7 @@ export class SessionReadService implements SessionReader {
   ): Promise<InternalDetailResponse | null> {
     const snapshot = await this.#store.current();
     const result = this.#queries.internalDetail(snapshot, id, itemId, query);
-    return result === null ? null : this.#mapper.internalDetail(itemId, result);
+    return result === null ? null : this.#mapper.internalDetail(result);
   }
 
   async getInteractionSession(

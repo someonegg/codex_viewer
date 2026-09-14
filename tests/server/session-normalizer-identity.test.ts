@@ -25,7 +25,6 @@ describe("session identity and recovery", () => {
     expect(directives.find((item) => item.id === "directive-5")).toEqual(expect.objectContaining({
       id: "directive-5",
       text: "DEVELOPER_DIRECTIVE_CANARY",
-      charCount: 26,
       hasDetail: false,
     }));
     expect(normalized.directiveDetails.has("directive-5")).toBe(false);
@@ -38,12 +37,10 @@ describe("session identity and recovery", () => {
       expect.objectContaining({
         id: "internal-6",
         eventType: "reasoning",
-        summary: "Internal event: reasoning",
       }),
       expect.objectContaining({
         id: "internal-18",
         eventType: "reasoning",
-        summary: "Internal event: reasoning",
       }),
     ]);
     expect(JSON.stringify(normalized.timeline)).not.toContain("REASONING_CANARY_NEVER_RENDER");

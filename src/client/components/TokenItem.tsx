@@ -2,11 +2,14 @@ import type {
   TokenItem as Token,
   TokenUsageCounters,
 } from "../../shared/domain";
+import { EventTime } from "./EventTime";
 
 export function TokenItem({ item }: { item: Token }) {
   return (
     <article className="token-body">
-      <p className="event-label">Token · {item.ordinal}</p>
+      <p className="event-label">
+        Token · {item.ordinal}<EventTime timestamp={item.timestamp} />
+      </p>
       <div className="token-usage">
         <TokenUsageGroup label="Total" counters={item.tokenUsage.total} />
         <TokenUsageGroup label="Last" counters={item.tokenUsage.last} />

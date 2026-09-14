@@ -59,7 +59,7 @@ export function readContext(
 export const toolItem: Tool = {
   kind: "tool", stage: "output", id: "tool-2", ordinal: 2, timestamp: null,
   callId: "call-reader", toolName: "exec",
-  status: "completed", preview: "inspect", truncated: false, hasDetail: true,
+  status: "completed", preview: "inspect", charCount: 7, hasDetail: true,
 };
 
 export const directiveItem: Directive = {
@@ -69,7 +69,6 @@ export const directiveItem: Directive = {
   timestamp: null,
   summary: "AGENTS.md instructions",
   charCount: 1_892,
-  truncated: false,
   hasDetail: true,
 };
 

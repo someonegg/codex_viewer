@@ -288,7 +288,6 @@ describe("SessionReadService", () => {
     expect(await repository.getDirectiveDetail(parent.id, directive.id, {
       cursor: allItems!.cursor,
     })).toEqual(expect.objectContaining({
-      itemId: directive.id,
       text: expect.stringContaining("DIRECTIVE_DETAIL_CANARY"),
       truncated: false,
     }));
@@ -298,7 +297,6 @@ describe("SessionReadService", () => {
     expect(await repository.getInternalDetail(parent.id, internal.id, {
       cursor: allItems!.cursor,
     })).toEqual(expect.objectContaining({
-      itemId: internal.id,
       json: expect.stringContaining("REASONING_CANARY_NEVER_RENDER"),
       truncated: false,
     }));
@@ -334,10 +332,10 @@ describe("SessionReadService", () => {
     })).resolves.not.toBeNull();
     await expect(repository.getDirectiveDetail(session.id, directive.id, {
       cursor: allItems!.cursor,
-    })).resolves.toEqual(expect.objectContaining({ itemId: directive.id }));
+    })).resolves.toEqual(expect.objectContaining({ text: expect.any(String) }));
     await expect(repository.getInternalDetail(session.id, internal.id, {
       cursor: allItems!.cursor,
-    })).resolves.toEqual(expect.objectContaining({ itemId: internal.id }));
+    })).resolves.toEqual(expect.objectContaining({ json: expect.any(String) }));
   });
 
   it("invalidates confirmed cursors after rollout replacement", async () => {
@@ -486,7 +484,6 @@ describe("SessionReadService", () => {
         timestamp: null,
         summary: "detail",
         charCount: 6,
-        truncated: false,
         hasDetail: true,
       },
       {
@@ -635,7 +632,7 @@ describe("SessionReadService", () => {
     )).toEqual(
       expect.objectContaining({
         id: "internal-6",
-        summary: "Internal event: reasoning",
+        eventType: "reasoning",
       }),
     );
   });

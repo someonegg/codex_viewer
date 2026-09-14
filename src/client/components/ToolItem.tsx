@@ -6,6 +6,8 @@ import type {
 import type { ToolItem as Tool } from "../../shared/domain";
 import { api } from "../api/client";
 import { useLazyDetail } from "../state/use-lazy-detail";
+import { EventTime } from "./EventTime";
+import { CharacterCount } from "./CharacterCount";
 
 interface ToolItemProps {
   item: Tool;
@@ -40,8 +42,12 @@ export function ToolItem({
         {item.stage === "call"
           ? `Tool call · ${item.ordinal}`
           : `Tool output · ${item.status} · ${item.ordinal}`}
+        <EventTime timestamp={item.timestamp} />
       </p>
-      <p><strong>{item.toolName}</strong>{item.preview ? ` — ${item.preview}` : ""}</p>
+      <p className="detail-summary">
+        <strong>{item.toolName}</strong>{item.preview ? ` — ${item.preview}` : ""}
+        {item.hasDetail ? <CharacterCount value={item.charCount} /> : null}
+      </p>
       <p className="tool-call-id">Call ID · <code>{item.callId}</code></p>
       {item.hasDetail
         ? (

@@ -3,6 +3,7 @@ import type { InternalDetailResponse, TimelineCursor } from "../../shared/api-co
 import type { InternalEventItem as Internal } from "../../shared/domain";
 import { api } from "../api/client";
 import { useLazyDetail } from "../state/use-lazy-detail";
+import { EventTime } from "./EventTime";
 
 interface InternalEventItemProps {
   item: Internal;
@@ -33,7 +34,9 @@ export function InternalEventItem({
 
   return (
     <article className="internal-event-body">
-      <p className="event-label">Internal · {item.ordinal}</p>
+      <p className="event-label">
+        Internal · {item.ordinal}<EventTime timestamp={item.timestamp} />
+      </p>
       <p><strong>{item.eventType}</strong></p>
       <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         {open ? "Hide JSON" : "Show JSON"}
@@ -49,7 +52,7 @@ export function InternalEventItem({
                 ? (
                     <>
                       <pre>{detail.json}</pre>
-                      {detail.truncated || item.truncated
+                      {detail.truncated
                         ? <p className="truncated">JSON was truncated for safe display.</p>
                         : null}
                     </>

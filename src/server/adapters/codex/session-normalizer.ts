@@ -306,7 +306,7 @@ function consumeRecord(
     );
     const item = items.at(-1);
     if (item?.kind === "internal" && item.ordinal === record.ordinal) {
-      addInternalDetail(item, record, items, internalDetails);
+      addInternalDetail(item, record, internalDetails);
     }
     return;
   }
@@ -317,7 +317,7 @@ function consumeRecord(
       const item = internalItemFromPayload(record.ordinal, timestamp, payload);
       items.push(item);
       if (item.kind === "internal") {
-        addInternalDetail(item, record, items, internalDetails);
+        addInternalDetail(item, record, internalDetails);
       }
     }
     return;
@@ -326,14 +326,14 @@ function consumeRecord(
   if (record.value.type === "turn_context") {
     const item = internalItem(record.ordinal, timestamp, "turn_context");
     items.push(item);
-    addInternalDetail(item, record, items, internalDetails);
+    addInternalDetail(item, record, internalDetails);
     return;
   }
   const eventType = string(record.value.type);
   if (eventType !== null) {
     const item = internalItem(record.ordinal, timestamp, eventType);
     items.push(item);
-    addInternalDetail(item, record, items, internalDetails);
+    addInternalDetail(item, record, internalDetails);
     return;
   }
   appendDiagnostic(diagnostics, {
@@ -347,12 +347,10 @@ function consumeRecord(
 function addInternalDetail(
   item: Extract<DomainTimelineRecord, { kind: "internal" }>,
   record: DecodedRecord,
-  items: DomainTimelineRecord[],
   details: Map<string, DomainInternalDetail>,
 ): void {
   const detail = internalDetail(record.value);
   details.set(item.id, detail);
-  if (detail.truncated) items[items.length - 1] = { ...item, truncated: true };
 }
 
 function appendDiagnostic(

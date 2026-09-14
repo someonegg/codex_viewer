@@ -54,7 +54,6 @@ describe("timeline visibility", () => {
         hasDetail: true,
         summary: "same",
         charCount: 1_001,
-        truncated: false,
       },
       message(4, "same"),
     ];
@@ -96,7 +95,6 @@ function directive(ordinal: number, text: string): TimelineItem {
     timestamp: null,
     hasDetail: false,
     text,
-    charCount: text.length,
   };
 }
 
@@ -120,8 +118,6 @@ function internal(ordinal: number): TimelineItem {
     ordinal,
     timestamp: null,
     eventType: "test",
-    summary: "test event",
-    truncated: false,
   };
 }
 

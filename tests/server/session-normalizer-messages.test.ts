@@ -68,7 +68,6 @@ describe("message and directive normalization", () => {
     expect(normalized.timeline[0]).toEqual(expect.objectContaining({
       hasDetail: false,
       text: "Actual user",
-      charCount: 11,
     }));
     expect(normalized.directiveDetails.has("directive-1")).toBe(false);
     expect(normalized.session).toEqual(expect.objectContaining({
@@ -128,7 +127,7 @@ describe("message and directive normalization", () => {
     expect(JSON.stringify(normalized)).not.toContain("NON_TEXT_PART_MUST_NOT_RENDER");
   });
 
-  it("inlines 500 characters and retains 501 characters as lazy detail", () => {
+  it("inlines 512 code units and retains 513 as lazy detail", () => {
     const inlineText = "i".repeat(MAX_INLINE_DIRECTIVE_CHARS);
     const lazyText = "l".repeat(MAX_INLINE_DIRECTIVE_CHARS + 1);
     const normalized = normalizeRecords("directive-boundaries", [
@@ -140,21 +139,30 @@ describe("message and directive normalization", () => {
       kind: "directive",
       hasDetail: false,
       text: inlineText,
-      charCount: MAX_INLINE_DIRECTIVE_CHARS,
     }));
     expect(normalized.directiveDetails.has("directive-1")).toBe(false);
     expect(normalized.timeline[1]).toEqual(expect.objectContaining({
       kind: "directive",
       hasDetail: true,
-      summary: "l".repeat(240),
+      summary: "l".repeat(256),
       charCount: MAX_INLINE_DIRECTIVE_CHARS + 1,
-      truncated: false,
     }));
     expect(normalized.timeline[1]).not.toHaveProperty("text");
     expect(normalized.directiveDetails.get("directive-2")).toEqual({
       text: lazyText,
       truncated: false,
     });
+  });
+
+  it("truncates directive summaries without a marker or split surrogate", () => {
+    const split = `${"x".repeat(255)}😀${"z".repeat(300)}`;
+    const normalized = normalizeRecords("directive-summary-code-units", [
+      responseMessage(1, split),
+    ]);
+    const item = normalized.timeline[0];
+
+    expect(item.kind === "directive" && item.hasDetail ? item.summary : null)
+      .toBe("x".repeat(255));
   });
 
   it("emits a completed UserMessage and uses it for the title", () => {
@@ -275,8 +283,6 @@ describe("message and directive normalization", () => {
       ordinal: index + 1,
       timestamp: null,
       eventType: `item_completed.${subtype}`,
-      summary: `Internal event: item_completed.${subtype}`,
-      truncated: false,
     })));
     expect(normalized.session.messageCount).toBe(0);
     const serialized = JSON.stringify(normalized.timeline);

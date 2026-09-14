@@ -61,11 +61,9 @@ export class SessionApiMapper {
   }
 
   toolDetail(
-    itemId: string,
     result: ToolDetailResult,
   ): ToolDetailResponse {
     return {
-      itemId,
       input: result.detail.input,
       output: result.detail.output,
       truncated: result.detail.truncated,
@@ -73,22 +71,18 @@ export class SessionApiMapper {
   }
 
   directiveDetail(
-    itemId: string,
     result: DirectiveDetailResult,
   ): DirectiveDetailResponse {
     return {
-      itemId,
       text: result.detail.text,
       truncated: result.detail.truncated,
     };
   }
 
   internalDetail(
-    itemId: string,
     result: InternalDetailResult,
   ): InternalDetailResponse {
     return {
-      itemId,
       json: result.detail.json,
       truncated: result.detail.truncated,
     };
@@ -123,34 +117,100 @@ export class SessionApiMapper {
   }
 
   timelineItem(item: DomainTimelineRecord): TimelineItem {
-    if (item.kind === "user_input") {
-      if (item.stage === "request") {
+    const base = { id: item.id, ordinal: item.ordinal, timestamp: item.timestamp };
+    switch (item.kind) {
+      case "message":
         return {
-          ...item,
-          questions: item.questions.map((question) => ({
-            ...question,
-            options: question.options.map((option) => ({ ...option })),
-          })),
+          ...base,
+          kind: "message",
+          role: item.role,
+          phase: item.phase,
+          itemType: item.itemType,
+          markdown: item.markdown,
         };
+      case "directive":
+        return item.hasDetail
+          ? {
+              ...base,
+              kind: "directive",
+              hasDetail: true,
+              summary: item.summary,
+              charCount: item.charCount,
+            }
+          : { ...base, kind: "directive", hasDetail: false, text: item.text };
+      case "tool": {
+        const tool = {
+          ...base,
+          kind: "tool" as const,
+          callId: item.callId,
+          toolName: item.toolName,
+          preview: item.preview,
+          charCount: item.charCount,
+          hasDetail: item.hasDetail,
+        };
+        return item.stage === "call"
+          ? { ...tool, stage: "call" }
+          : { ...tool, stage: "output", status: item.status };
       }
-      return item.outcome === "answered"
-        ? {
-            ...item,
+      case "user_input":
+        if (item.stage === "request") {
+          return {
+            ...base,
+            kind: "user_input",
+            stage: "request",
+            callId: item.callId,
+            questions: item.questions.map((question) => ({
+              id: question.id,
+              header: question.header,
+              question: question.question,
+              options: question.options.map((option) => ({
+                label: option.label,
+                description: option.description,
+              })),
+            })),
+          };
+        }
+        if (item.outcome === "answered") {
+          return {
+            ...base,
+            kind: "user_input",
+            stage: "response",
+            callId: item.callId,
+            outcome: "answered",
             answers: item.answers.map((answer) => ({
-              ...answer,
+              questionId: answer.questionId,
               answers: [...answer.answers],
             })),
-          }
-        : { ...item };
+          };
+        }
+        return item.outcome === "unavailable"
+          ? {
+              ...base,
+              kind: "user_input",
+              stage: "response",
+              callId: item.callId,
+              outcome: "unavailable",
+              summary: item.summary,
+            }
+          : {
+              ...base,
+              kind: "user_input",
+              stage: "response",
+              callId: item.callId,
+              outcome: "aborted",
+            };
+      case "token":
+        return {
+          ...base,
+          kind: "token",
+          tokenUsage: {
+            total: item.tokenUsage.total === null ? null : { ...item.tokenUsage.total },
+            last: item.tokenUsage.last === null ? null : { ...item.tokenUsage.last },
+          },
+        };
+      case "internal":
+        return { ...base, kind: "internal", eventType: item.eventType };
     }
-    if (item.kind !== "token") return { ...item };
-    return {
-      ...item,
-      tokenUsage: {
-        total: item.tokenUsage.total === null ? null : { ...item.tokenUsage.total },
-        last: item.tokenUsage.last === null ? null : { ...item.tokenUsage.last },
-      },
-    };
   }
 
   diagnostic(item: DomainDiagnostic): Diagnostic {

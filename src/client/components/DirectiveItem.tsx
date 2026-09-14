@@ -6,6 +6,8 @@ import type {
 import type { DirectiveItem as Directive } from "../../shared/domain";
 import { api } from "../api/client";
 import { useLazyDetail } from "../state/use-lazy-detail";
+import { EventTime } from "./EventTime";
+import { CharacterCount } from "./CharacterCount";
 
 interface DirectiveItemProps {
   item: Directive;
@@ -36,7 +38,9 @@ export function DirectiveItem({
 function InlineDirective({ item }: { item: Extract<Directive, { hasDetail: false }> }) {
   return (
     <article className="directive-body">
-      <p className="event-label">Directive · {item.ordinal}</p>
+      <p className="event-label">
+        Directive · {item.ordinal}<EventTime timestamp={item.timestamp} />
+      </p>
       <pre className="directive-block">{item.text}</pre>
     </article>
   );
@@ -64,8 +68,13 @@ function LazyDirective({
 
   return (
     <article className="directive-body">
-      <p className="event-label">Directive · {item.ordinal}</p>
-      <p><strong>{item.summary}</strong> · {item.charCount.toLocaleString()} characters</p>
+      <p className="event-label">
+        Directive · {item.ordinal}<EventTime timestamp={item.timestamp} />
+      </p>
+      <p className="detail-summary">
+        <strong>{item.summary}</strong>
+        <CharacterCount value={item.charCount} />
+      </p>
       <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         {open ? "Hide directive" : "Show directive"}
       </button>
@@ -80,7 +89,7 @@ function LazyDirective({
                 ? (
                     <>
                       <pre>{detail.text}</pre>
-                      {detail.truncated || item.truncated
+                      {detail.truncated
                         ? <p className="truncated">Directive was truncated for safe display.</p>
                         : null}
                     </>

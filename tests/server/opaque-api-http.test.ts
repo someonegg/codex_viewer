@@ -64,9 +64,17 @@ describe("opaque cursor API", () => {
       `${base}/api/v1/sessions/${sessionId}/items/internal-6/internal?cursor=${encodeURIComponent(page.cursor)}`,
     );
     expect(detail.status).toBe(200);
-    expect(await detail.json()).toMatchObject({
-      itemId: "internal-6",
+    expect(await detail.json()).toEqual({
       json: expect.stringContaining("REASONING_CANARY_NEVER_RENDER"),
+      truncated: false,
+    });
+    const toolDetail = await fetch(
+      `${base}/api/v1/sessions/${sessionId}/items/tool-8/tool?cursor=${encodeURIComponent(page.cursor)}`,
+    );
+    expect(toolDetail.status).toBe(200);
+    expect(await toolDetail.json()).toEqual({
+      input: '{"id":"sample"}',
+      output: "synthetic result",
       truncated: false,
     });
     const wrongKind = await fetch(
@@ -227,7 +235,6 @@ describe("opaque cursor API", () => {
       `${base}/api/v1/sessions/${sessionId}/items/directive-4/directive?cursor=${encodeURIComponent(tail.cursor)}`,
     ).then((response) => response.json());
     expect(detail).toEqual({
-      itemId: "directive-4",
       text: expect.stringContaining("DIRECTIVE_DETAIL_CANARY"),
       truncated: false,
     });

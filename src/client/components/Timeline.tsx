@@ -141,6 +141,7 @@ function projectUserInputCards(items: readonly TimelineItem[]): TimelineEntry[] 
         kind: "user_input",
         id: item.id,
         ordinal: item.ordinal,
+        timestamp: item.timestamp,
         request: item,
         response: null,
       });
@@ -155,6 +156,7 @@ function projectUserInputCards(items: readonly TimelineItem[]): TimelineEntry[] 
         kind: "user_input",
         id: item.id,
         ordinal: item.ordinal,
+        timestamp: item.timestamp,
         request: null,
         response: item,
       });

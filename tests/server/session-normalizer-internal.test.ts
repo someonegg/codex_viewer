@@ -31,17 +31,17 @@ describe("internal event normalization", () => {
     });
   });
 
-  it("truncates formatted JSON at a valid UTF-8 boundary", () => {
+  it("truncates formatted JSON by JavaScript code units", () => {
     const normalized = normalizeRecords("internal-truncation", [{
       ordinal: 1,
-      value: { type: "world_state", payload: { text: "😀".repeat(100_000) } },
+      value: { type: "world_state", payload: { text: "😀".repeat(200_000) } },
     }]);
     const detail = normalized.internalDetails.get("internal-1")!;
 
-    expect(Buffer.byteLength(detail.json, "utf8")).toBeLessThanOrEqual(256 * 1024);
-    expect(detail.json).not.toContain("�");
+    expect(detail.json).toHaveLength(255_999);
+    expect(detail.json.charCodeAt(detail.json.length - 1)).not.toBe(0xd83d);
     expect(detail.truncated).toBe(true);
-    expect(normalized.timeline[0]).toMatchObject({ truncated: true });
+    expect(normalized.timeline[0]).not.toHaveProperty("truncated");
   });
 
   it("shows turn context safely and retains allowlisted total and last token usage", () => {
@@ -103,8 +103,6 @@ describe("internal event normalization", () => {
         ordinal: 1,
         timestamp: "2026-07-28T20:00:00Z",
         eventType: "turn_context",
-        summary: "Internal event: turn_context",
-        truncated: false,
       },
       {
         kind: "token",

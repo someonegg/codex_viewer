@@ -157,13 +157,39 @@ describe("tool normalization", () => {
       kind: "tool",
       stage: "call",
       preview: "x".repeat(MAX_PREVIEW_CHARS),
-      truncated: true,
+      charCount: MAX_PREVIEW_CHARS + 1,
     });
     expect(detail).toEqual({
       input,
       output: null,
       truncated: false,
     });
+  });
+
+  it("uses code-unit preview boundaries without an ellipsis or split surrogate", () => {
+    const exact = "x".repeat(MAX_PREVIEW_CHARS);
+    const split = `${"x".repeat(MAX_PREVIEW_CHARS - 1)}😀`;
+    const normalized = normalizeRecords("preview-code-units", [
+      toolCall(1, "exact", "inspect", exact),
+      toolCall(2, "split", "inspect", split),
+    ]);
+    const tools = normalized.timeline.filter((item) => item.kind === "tool");
+
+    expect(tools[0]?.preview).toBe(exact);
+    expect(tools[1]?.preview).toBe("x".repeat(MAX_PREVIEW_CHARS - 1));
+    expect(tools[1]?.preview).not.toContain("…");
+  });
+
+  it("reports original call and matched or unmatched output code-unit totals", () => {
+    const normalized = normalizeRecords("tool-char-counts", [
+      toolCall(1, "matched", "inspect", "abc"),
+      toolOutput(2, "matched", "de"),
+      toolOutput(3, "unmatched", "xyz"),
+      toolCall(4, "empty", "inspect", ""),
+    ]);
+    const tools = normalized.timeline.filter((item) => item.kind === "tool");
+
+    expect(tools.map((item) => item.charCount)).toEqual([3, 5, 3, 0]);
   });
 });
 

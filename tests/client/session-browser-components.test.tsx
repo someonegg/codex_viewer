@@ -8,6 +8,7 @@ import {
   planPreview,
   safeUrlTransform,
 } from "../../src/client/components/MessageItem";
+import { EventTime } from "../../src/client/components/EventTime";
 import { SessionHeader } from "../../src/client/components/SessionHeader";
 import { groupSessions, SessionTree } from "../../src/client/components/SessionTree";
 import { Timeline } from "../../src/client/components/Timeline";
@@ -20,7 +21,77 @@ import {
 } from "./session-browser.fixtures";
 
 describe("session browser components", () => {
-  it("renders an internal event type without its compatibility summary", () => {
+  it("renders valid event timestamps with semantic time markup and omits invalid values", () => {
+    const valid = "2026-07-28T10:00:00.000Z";
+    const view = render(<EventTime timestamp={valid} />);
+    expect(screen.getByText(new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "medium",
+    }).format(new Date(valid)))).toHaveAttribute("datetime", valid);
+
+    view.rerender(<EventTime timestamp={null} />);
+    expect(document.querySelector("time")).toBeNull();
+    view.rerender(<EventTime timestamp="not-a-timestamp" />);
+    expect(document.querySelector("time")).toBeNull();
+  });
+
+  it("uses request time for paired user input and response time for an orphan", () => {
+    render(<Timeline
+      items={[
+        {
+          kind: "user_input", stage: "request", id: "request", ordinal: 1,
+          timestamp: "2026-07-28T10:00:00.000Z", callId: "paired", questions: [],
+        },
+        {
+          kind: "user_input", stage: "response", outcome: "aborted", id: "response",
+          ordinal: 2, timestamp: "2026-07-28T10:00:01.000Z", callId: "paired",
+        },
+        {
+          kind: "user_input", stage: "response", outcome: "aborted", id: "orphan",
+          ordinal: 3, timestamp: "2026-07-28T10:00:02.000Z", callId: "orphan",
+        },
+      ]}
+      sessionId={SESSION_ID}
+      cursor={firstPage.cursor}
+      hasMore={false}
+      loading={false}
+      onLoadMore={vi.fn()}
+      onTimelineConflict={vi.fn()}
+    />);
+
+    expect([...document.querySelectorAll("time")].map((node) => node.getAttribute("datetime")))
+      .toEqual(["2026-07-28T10:00:00.000Z", "2026-07-28T10:00:02.000Z"]);
+  });
+
+  it("renders timestamps for every timeline event kind", () => {
+    const timestamp = "2026-07-28T10:00:00.000Z";
+    render(<Timeline
+      items={[
+        { kind: "message", id: "message", ordinal: 1, timestamp, role: "user",
+          phase: null, itemType: null, markdown: "message" },
+        { kind: "directive", id: "directive", ordinal: 2, timestamp,
+          hasDetail: false, text: "directive" },
+        { kind: "tool", stage: "call", id: "tool", ordinal: 3, timestamp,
+          callId: "call", toolName: "tool", preview: null, charCount: 0, hasDetail: false },
+        { kind: "user_input", stage: "request", id: "input", ordinal: 4, timestamp,
+          callId: "input", questions: [] },
+        { kind: "token", id: "token", ordinal: 5, timestamp,
+          tokenUsage: { total: null, last: null } },
+        { kind: "internal", id: "internal", ordinal: 6, timestamp,
+          eventType: "reasoning" },
+      ]}
+      sessionId={SESSION_ID}
+      cursor={firstPage.cursor}
+      hasMore={false}
+      loading={false}
+      onLoadMore={vi.fn()}
+      onTimelineConflict={vi.fn()}
+    />);
+
+    expect(document.querySelectorAll(`time[datetime="${timestamp}"]`)).toHaveLength(6);
+  });
+
+  it("renders an internal event type", () => {
     render(<Timeline
       items={[{
         kind: "internal",
@@ -28,8 +99,6 @@ describe("session browser components", () => {
         ordinal: 3,
         timestamp: null,
         eventType: "reasoning",
-        summary: "Visible reasoning summary",
-        truncated: false,
       }]}
       sessionId={SESSION_ID}
       cursor={firstPage.cursor}
@@ -38,10 +107,9 @@ describe("session browser components", () => {
       onLoadMore={vi.fn()}
       onTimelineConflict={vi.fn()}
     />);
-  
+
     expect(screen.getByText("Internal · 3")).toBeInTheDocument();
     expect(screen.getByText("reasoning", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.queryByText(/Visible reasoning summary/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show JSON" })).toBeInTheDocument();
   });
 

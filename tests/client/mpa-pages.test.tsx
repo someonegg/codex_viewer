@@ -147,7 +147,6 @@ describe("MPA pages", () => {
       hasDetail: true,
       summary: "Developer instructions",
       charCount: 500,
-      truncated: false,
     }];
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
       if (fetchMock.mock.calls.length === 1) {

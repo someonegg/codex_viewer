@@ -88,6 +88,18 @@ describe("request_user_input normalization", () => {
       ]);
   });
 
+  it("limits unavailable response summaries to 256 code units", () => {
+    const response = `${"x".repeat(255)}😀`;
+    const normalized = normalizeRecords("user-input-summary-limit", [
+      userInputRequest(1, "invalid", { questions: [] }),
+      userInputOutput(2, "invalid", response),
+    ]);
+    const item = normalized.timeline[1];
+
+    expect(item.kind === "user_input" && item.stage === "response" &&
+        item.outcome === "unavailable" ? item.summary : null).toHaveLength(255);
+  });
+
   it("keeps an output without a preceding request_user_input call as a tool output", () => {
     const normalized = normalizeRecords("unmatched-user-input", [
       userInputOutput(1, "missing", "result"),

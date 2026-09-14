@@ -90,7 +90,6 @@ export interface DomainMessageRecord extends DomainTimelineRecordBase {
 
 interface DomainDirectiveRecordBase extends DomainTimelineRecordBase {
   readonly kind: "directive";
-  readonly charCount: number;
 }
 
 export interface DomainInlineDirectiveRecord extends DomainDirectiveRecordBase {
@@ -101,7 +100,7 @@ export interface DomainInlineDirectiveRecord extends DomainDirectiveRecordBase {
 export interface DomainLazyDirectiveRecord extends DomainDirectiveRecordBase {
   readonly hasDetail: true;
   readonly summary: string;
-  readonly truncated: boolean;
+  readonly charCount: number;
 }
 
 export type DomainDirectiveRecord =
@@ -113,7 +112,7 @@ interface DomainToolRecordBase extends DomainTimelineRecordBase {
   readonly callId: string;
   readonly toolName: string;
   readonly preview: string | null;
-  readonly truncated: boolean;
+  readonly charCount: number;
   readonly hasDetail: boolean;
 }
 
@@ -198,8 +197,6 @@ export interface DomainTokenRecord extends DomainTimelineRecordBase {
 export interface DomainInternalEventRecord extends DomainTimelineRecordBase {
   readonly kind: "internal";
   readonly eventType: string;
-  readonly summary: string;
-  readonly truncated: boolean;
 }
 
 export type DomainTimelineRecord =

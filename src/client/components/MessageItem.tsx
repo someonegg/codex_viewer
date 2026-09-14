@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import type { MessageItem as Message } from "../../shared/domain";
+import { EventTime } from "./EventTime";
 
 const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
 const REMARK_PLUGINS = [remarkGfm, remarkMath];
@@ -87,7 +88,9 @@ export const MessageItem = memo(function MessageItem({ item }: { item: Message }
   if (isPlan(item)) return <PlanMessage item={item} />;
   return (
     <article className="message-body">
-      <p className="event-label">{messageLabel(item)}{itemType} · {item.ordinal}</p>
+      <p className="event-label">
+        {messageLabel(item)}{itemType} · {item.ordinal}<EventTime timestamp={item.timestamp} />
+      </p>
       <MarkdownContent markdown={item.markdown} />
     </article>
   );
@@ -106,7 +109,9 @@ function PlanMessage({ item }: { item: Message }) {
         aria-controls={contentId}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="event-label">Assistant final · Plan · {item.ordinal}</span>
+        <span className="event-label">
+          Assistant final · Plan · {item.ordinal}<EventTime timestamp={item.timestamp} />
+        </span>
         <span className="plan-toggle-action">
           {open ? "Hide" : "Show"}
           <span className="plan-toggle-mark" aria-hidden="true">›</span>
