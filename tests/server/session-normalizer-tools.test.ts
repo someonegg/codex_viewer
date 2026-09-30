@@ -33,7 +33,7 @@ describe("tool normalization", () => {
     });
     expect(normalized.toolDetails.get("tool-8")?.output).toBe("synthetic result");
     expect(normalized.toolDetails.get("tool-13")?.output).toBe("string-shaped output");
-    expect(normalized.toolDetails.get("tool-15")?.output).toBe("array shaped output");
+    expect(normalized.toolDetails.get("tool-15")?.output).toBe("array \n\nshaped output");
     expect(normalized.session.toolCount).toBe(4);
   });
 

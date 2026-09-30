@@ -119,7 +119,7 @@ function toolOutputText(value: unknown): string | null {
     .filter(isObject)
     .map((part) => string(part.text) ?? string(part.output_text) ?? serializeText(part))
     .filter((part): part is string => part !== null);
-  return parts.length === 0 ? serializeText(value) : parts.join("");
+  return parts.length === 0 ? serializeText(value) : parts.join("\n\n");
 }
 
 function string(value: unknown): string | null {
